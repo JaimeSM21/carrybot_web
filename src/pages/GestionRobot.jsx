@@ -105,7 +105,7 @@ const GLOBAL_CSS = `
 
   /* Cámara */
   .cb-camera-box {
-    position: relative; width: 100%; aspect-ratio: 16/9;
+    position: relative; width: 70%; aspect-ratio: 16/9;
     background: #0d1117; border-radius: 8px; overflow: hidden;
     display: flex; align-items: center; justify-content: center;
   }
@@ -552,19 +552,18 @@ export default function GestionRobot() {
             <div className="cb-card" style={{ marginTop: 12 }}>
               <div className="cb-card-header"> Gestión de entregas</div>
               <div className="cb-card-body">
-                <p style={{ fontSize: 13, color: C.muted, marginBottom: 12 }}>
-                  Selecciona el paquete a recoger y entregar.
+                {/* ── Ruta fija: todos los pedidos ── */}
+                <p style={{ fontSize: 12, color: "var(--color-text-secondary)", marginBottom: 8 }}>
+                  Ruta automática
                 </p>
-                {["PaqueteA", "PaqueteB", "PaqueteC"].map((pkg) => (
-                  <button
-                    key={pkg}
-                    className="cb-control-btn"
-                    style={{ marginBottom: 8 }}
-                    disabled={!connected}
-                  >
-                     {pkg} — Estanteria1
-                  </button>
-                ))}
+                <button
+                  className="cb-control-btn active"
+                  style={{ marginBottom: 16, borderColor: "#f5c518", background: "#f5c518", color: "#1a2d5a" }}
+                  disabled={!connected}
+                  onClick={() => publishCommand('/web/ruta_fija', 'start')}
+                >
+                   Iniciar ruta fija (todos los pedidos)
+                </button>
               </div>
             </div>
           )}
