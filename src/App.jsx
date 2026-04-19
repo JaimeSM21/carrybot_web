@@ -5,6 +5,7 @@ import Register from './pages/Register'
 import GestionRobot from './pages/GestionRobot'
 import ProtectedRoute from './components/ProtectedRoute'
 import { getSessionUser, logoutSession, seedDemoUser } from './utils/auth'
+import FormularioIncidencias from './pages/FormularioIncidencias'
  
 function App() {
   const [user, setUser] = useState(() => getSessionUser())
@@ -42,6 +43,9 @@ function App() {
           }
         />
         <Route path="*" element={<Navigate to={user ? '/home' : '/login'} replace />} />
+
+        <Route path="/contacto" element={<FormularioIncidencias />} />
+        
       </Routes>
     </BrowserRouter>
   )

@@ -354,8 +354,8 @@ export default function Login({ onLogin }) {
 
         <div className="cb-nav-spacer" />
 
-        <button className="cb-nav-session" onClick={() => navigate('/register')}>
-          Contáctanos
+        <button className="cb-nav-session" onClick={() => navigate('/contacto')}>
+          Incidencia!
         </button>
       </nav>
 
