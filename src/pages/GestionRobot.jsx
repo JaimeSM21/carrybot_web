@@ -105,14 +105,16 @@ const GLOBAL_CSS = `
 
   /* Cámara */
   .cb-camera-box {
-    position: relative; width: 70%; aspect-ratio: 16/9;
+    position: relative; width: 50%; aspect-ratio: 16/9;
     background: #0d1117; border-radius: 8px; overflow: hidden;
     display: flex; align-items: center; justify-content: center;
   }
-  .cb-camera-img { width: 100%; height: 100%; object-fit: cover; }
+  .cb-camera-img { width: 100%; height: 100%; object-fit: cover; 
+  display: flex; align-items: center; justify-content: center;}
   .cb-camera-overlay {
     position: absolute; top: 0; left: 0; right: 0; bottom: 0;
     background: linear-gradient(180deg, transparent 60%, rgba(0,0,0,.5) 100%);
+    
     pointer-events: none;
   }
   .cb-camera-label {
@@ -638,7 +640,32 @@ export default function GestionRobot({ user, onLogout }) {
             </div>
           </div>
         </div>
+        {/* Botón STOP — siempre visible cuando está conectado */}
+        {connected && (
+          <div style={{ marginTop: 12 }}>
+            <button
+              style={{
+                width: '100%',
+                padding: '12px',
+                background: '#ef4444',
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                fontSize: '15px',
+                fontWeight: '700',
+                cursor: 'pointer',
+                letterSpacing: '1px',
+                textTransform: 'uppercase',
+              }}
+              onClick={() => publishCommand('/web/cancel', 'stop')}
+            >
+              STOP — Cancelar acción
+            </button>
+          </div>
+        )}
       </div>
+
+      
 
       {/* FOOTER */}
       <footer className="cb-footer">
