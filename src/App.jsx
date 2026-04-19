@@ -5,6 +5,7 @@ import Register from './pages/Register'
 import GestionRobot from './pages/GestionRobot'
 import ProtectedRoute from './components/ProtectedRoute'
 import LandingPage   from './pages/LandingPage'
+import UserManagement from './pages/UserManagement'
 import { getSessionUser, logoutSession, seedDemoUser } from './utils/auth'
 import FormularioIncidencias from './pages/FormularioIncidencias'
 import RobotList from './pages/RobotList'
@@ -45,6 +46,14 @@ function App() {
             </ProtectedRoute>
           }
         />
+        <Route
+	  path="/admin/users"
+	  element={
+	    <ProtectedRoute isAuthenticated={!!user}>
+	      <UserManagement user={user} onLogout={handleLogout} />
+	    </ProtectedRoute>
+	  }
+	/>
 
         <Route
           path="/robot/:id"
@@ -61,6 +70,7 @@ function App() {
         <Route path="/robot"  element={<GestionRobot />} />
 
       </Routes>
+      
     </BrowserRouter>
   )
 }
