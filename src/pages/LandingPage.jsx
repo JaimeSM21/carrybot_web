@@ -386,7 +386,7 @@ export default function LandingPage() {
           </button>
         </div>
         <div className="lp-nav-spacer" />
-        <button className="lp-nav-contact">Contáctanos</button>
+        <button className="lp-nav-contact" onClick={() => navigate("/contacto")}>Contáctanos</button>
       </nav>
 
       {/* HERO */}
