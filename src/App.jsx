@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import LandingPage   from './pages/LandingPage'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import GestionRobot from './pages/GestionRobot'
@@ -24,7 +25,7 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Navigate to={user ? '/home' : '/login'} replace />} />
+        <Route path="/" element={<LandingPage />} />
         <Route
           path="/login"
           element={user ? <Navigate to="/home" replace /> : <Login onLogin={handleLogin} />}
@@ -42,6 +43,7 @@ function App() {
           }
         />
         <Route path="*" element={<Navigate to={user ? '/home' : '/login'} replace />} />
+        <Route path="/robot"  element={<GestionRobot />} />
       </Routes>
     </BrowserRouter>
   )
