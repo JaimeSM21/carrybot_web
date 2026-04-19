@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-
+import { useNavigate } from "react-router-dom";
 // ─── Colores Carrybot (igual que la imagen de referencia) ───────────────────
 const C = {
   navy:    "#1a2d5a",
@@ -231,7 +231,8 @@ const GLOBAL_CSS = `
 `;
 
 // ─── Componente principal ────────────────────────────────────────────────────
-export default function GestionRobot() {
+export default function GestionRobot({ user, onLogout }) {
+  const navigate = useNavigate();
   const roslibLoaded = useRoslib();
 
   const [address, setAddress] = useState("ws://127.0.0.1:9090/");
@@ -342,17 +343,31 @@ export default function GestionRobot() {
           <button className="cb-nav-btn">Registro</button>
         </div>
         <div className="cb-nav-spacer" />
-        <button className="cb-nav-session">Cerrar sesión</button>
+        <button
+          className="cb-nav-session"
+          onClick={() => {
+            onLogout?.();
+            navigate("/login", { replace: true });
+          }}
+        >
+          Cerrar sesión
+        </button>
       </nav>
 
       {/* VOLVER */}
-      <button className="cb-back">‹ Volver</button>
+      <button className="cb-back" onClick={() => navigate("/login")}>
+        ‹ Volver
+      </button>
 
       {/* LAYOUT PRINCIPAL */}
       <div className="cb-layout">
 
         {/* ── COLUMNA IZQUIERDA: Opciones de manejo ── */}
         <div>
+          <div style={{ fontSize: 13, color: C.muted, fontWeight: 600, marginBottom: 12 }}>
+            Sesión activa: {user?.name || user?.email || "Operador"}
+          </div>
+          
           <div className="cb-card">
             <div className="cb-card-header">⚙ Opciones de manejo del robot</div>
             <div className="cb-card-body" style={{ display: "flex", flexDirection: "column", gap: 0 }}>
