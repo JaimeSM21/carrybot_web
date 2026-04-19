@@ -5,6 +5,8 @@ import Register from './pages/Register'
 import GestionRobot from './pages/GestionRobot'
 import ProtectedRoute from './components/ProtectedRoute'
 import { getSessionUser, logoutSession, seedDemoUser } from './utils/auth'
+import FormularioIncidencias from './pages/FormularioIncidencias'
+import RobotList from './pages/RobotList'
  
 function App() {
   const [user, setUser] = useState(() => getSessionUser())
@@ -25,6 +27,7 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Navigate to={user ? '/home' : '/login'} replace />} />
+
         <Route
           path="/login"
           element={user ? <Navigate to="/home" replace /> : <Login onLogin={handleLogin} />}
@@ -37,11 +40,24 @@ function App() {
           path="/home"
           element={
             <ProtectedRoute isAuthenticated={!!user}>
+              <RobotList user={user} onLogout={handleLogout} />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/robot/:id"
+          element={
+            <ProtectedRoute isAuthenticated={!!user}>
               <GestionRobot user={user} onLogout={handleLogout} />
             </ProtectedRoute>
           }
         />
+
+        <Route path="/contacto" element={<FormularioIncidencias />} />
+        
         <Route path="*" element={<Navigate to={user ? '/home' : '/login'} replace />} />
+
       </Routes>
     </BrowserRouter>
   )

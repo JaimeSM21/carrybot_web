@@ -288,8 +288,6 @@ export default function Login({ onLogin }) {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
-  const redirectedFrom = useMemo(() => location.state?.from || '/home', [location.state])
-
   useEffect(() => {
     const styleEl = document.createElement('style')
     styleEl.textContent = GLOBAL_CSS
@@ -331,8 +329,8 @@ export default function Login({ onLogin }) {
       setLoading(true)
       setError('')
       const sessionUser = await loginUser(form)
-      onLogin(sessionUser)
-      navigate(redirectedFrom, { replace: true })
+      if (onLogin) onLogin(sessionUser)
+      navigate('/home', { replace: true })
     } catch (err) {
       setError(err.message || 'No se pudo iniciar sesión.')
     } finally {
@@ -348,14 +346,14 @@ export default function Login({ onLogin }) {
 
         <div className="cb-nav-links">
           <button className="cb-nav-btn active">Inicio</button>
-          <button className="cb-nav-btn active">¡Conéctate!</button>
+          <button className="cb-nav-btn active" onClick={() => navigate('/login')}>¡Conéctate!</button>
           <button className="cb-nav-btn" onClick={() => navigate('/register')}>Registro</button>
         </div>
 
         <div className="cb-nav-spacer" />
 
-        <button className="cb-nav-session" onClick={() => navigate('/register')}>
-          Contáctanos
+        <button className="cb-nav-session" onClick={() => navigate('/contacto')}>
+          Incidencia!
         </button>
       </nav>
 
