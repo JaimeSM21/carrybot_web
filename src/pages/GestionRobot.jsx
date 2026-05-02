@@ -468,11 +468,13 @@ export default function GestionRobot({ user, onLogout }) {
               <div className="cb-camera-box">
                 {connected ? (
                   <>
-                    {/* En producción: sustituir src por el stream real del robot */}
                     <img
                       className="cb-camera-img"
-                      src="https://picsum.photos/seed/robot/800/450"
+                      src="http://localhost:8080/stream?topic=/camera/image_raw"
                       alt="Camera feed"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                      }}
                     />
                     <div className="cb-camera-overlay" />
                     <div className="cb-camera-label">CAM — Robot 01</div>
