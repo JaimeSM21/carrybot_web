@@ -8,9 +8,11 @@ const C = {
   gray: '#f4f5f7',
   border: '#aab7d4', 
   text: '#1a2d5a',
-  access: '#1d70b8', // Azul del botón de acceso
+  access: '#1d70b8', 
   danger: '#ef4444',
-  edit: '#94a3b8', 
+  edit: '#94a3b8',
+  success: '#22c55e', 
+  warning: '#f59e0b', 
 }
 
 const GLOBAL_CSS = `
@@ -28,38 +30,36 @@ const GLOBAL_CSS = `
   .cb-nav-links { display: flex; gap: 4px; margin-left: 20px; }
   .cb-nav-btn { background: transparent; border: 1px solid transparent; cursor: pointer; font-family: 'Barlow', sans-serif; font-size: 14px; font-weight: 600; color: ${C.white}; padding: 8px 16px; border-radius: 4px; text-transform: uppercase; transition: all .15s; }
   .cb-nav-btn:hover { border-color: ${C.white}; }
-  .cb-nav-btn.active { background: ${C.yellow}; color: ${C.navy}; border-color: ${C.yellow}; }
+  
+  /* Ya no hay clase .active en amarillo por defecto */
   
   .cb-nav-spacer { flex: 1; }
-  
   .cb-nav-logout { background: ${C.yellow}; color: ${C.navy}; border: none; border-radius: 4px; cursor: pointer; font-family: 'Barlow', sans-serif; font-size: 13px; font-weight: 700; padding: 8px 18px; text-transform: uppercase; transition: all .15s; }
-  .cb-nav-logout:hover { background: #e0b310; }
 
-  /* Main & Volver */
   .cb-back { display: inline-flex; align-items: center; gap: 6px; margin: 20px 28px; color: ${C.white}; font-size: 14px; font-weight: 600; background: #5b8bba; border: 1px solid ${C.navy}; border-radius: 4px; padding: 8px 16px; cursor: pointer; text-transform: uppercase; transition: all .15s; width: fit-content; }
-  .cb-back:hover { background: ${C.navy}; }
 
-  .cb-main-wrap { flex: 1; padding: 0 28px 40px; max-width: 1000px; margin: 0 auto; width: 100%; }
+  .cb-main-wrap { flex: 1; padding: 0 28px 40px; max-width: 1200px; margin: 0 auto; width: 100%; }
+  .cb-title { color: ${C.navy}; text-align: center; font-size: 32px; font-weight: 700; margin-bottom: 30px; }
 
-  /* Tabla de robots */
-  .cb-table-container { background: ${C.white}; border: 1px solid ${C.border}; border-radius: 2px; margin-bottom: 30px; overflow-x: auto; }
-  .cb-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 16px; }
-  .cb-table th { padding: 16px 20px; color: ${C.navy}; font-weight: 700; border-bottom: 1px solid ${C.border}; background: #f4f6fa; }
-  .cb-table td { padding: 14px 20px; border-bottom: 1px solid ${C.border}; color: ${C.text}; font-weight: 500; vertical-align: middle; }
-  .cb-table tr:last-child td { border-bottom: none; }
+  .cb-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 24px; }
+  .cb-card { background: ${C.white}; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.08); display: flex; flex-direction: column; }
+  .cb-card-header { background: ${C.navy}; color: ${C.white}; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; }
+  .cb-card-header h3 { font-size: 20px; font-weight: 700; }
+  .cb-card-body { padding: 24px; display: flex; flex-direction: column; gap: 16px; }
 
-  /* Botones de acción */
-  .cb-action-cell { display: flex; gap: 10px; align-items: center; }
-  .cb-btn-access { background: ${C.access}; color: ${C.white}; border: 1px solid #155e91; padding: 6px 14px; border-radius: 4px; font-weight: 600; cursor: pointer; font-size: 13px; transition: background .15s; }
-  .cb-btn-access:hover { background: #155e91; }
-  .cb-btn-edit { background: ${C.edit}; color: ${C.white}; border: 1px solid #475569; padding: 6px 14px; border-radius: 4px; font-weight: 600; cursor: pointer; text-transform: uppercase; font-size: 13px; }
-  .cb-btn-delete { background: ${C.danger}; color: ${C.white}; border: 1px solid #b91c1c; padding: 6px 14px; border-radius: 4px; font-weight: 600; cursor: pointer; text-transform: uppercase; font-size: 13px; }
+  .cb-badge { display: inline-flex; align-items: center; gap: 8px; padding: 6px 16px; border-radius: 20px; font-weight: 700; font-size: 13px; width: fit-content; }
+  .status-listo { background: #dcfce7; color: ${C.success}; }
+  .status-ruta { background: #fef3c7; color: ${C.warning}; }
+  .status-off { background: #fee2e2; color: ${C.danger}; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
 
-  /* Footer */
-  .cb-footer { background: transparent; color: ${C.navy}; display: flex; align-items: center; justify-content: space-between; padding: 14px 28px; font-size: 14px; margin-top: auto; border-top: 1px solid ${C.border}; }
-  .cb-footer-logo { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 20px; color: ${C.navy}; }
-  .cb-footer-logo span { color: ${C.yellow}; }
-  .cb-footer-icons { display: flex; gap: 14px; font-size: 20px; color: ${C.navy}; }
+  .cb-info-row { display: flex; justify-content: space-between; font-size: 15px; color: ${C.text}; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px; }
+  .cb-info-label { font-weight: 700; }
+
+  .cb-btn-main { background: ${C.yellow}; color: ${C.navy}; border: none; padding: 12px; border-radius: 6px; font-weight: 700; cursor: pointer; text-transform: uppercase; transition: opacity .15s; margin-top: 10px; }
+  .cb-btn-outline { background: transparent; border: 2px solid ${C.navy}; color: ${C.navy}; padding: 10px; border-radius: 6px; font-weight: 700; cursor: pointer; text-transform: uppercase; margin-top: 10px; }
+
+  .cb-footer { background: transparent; color: ${C.navy}; display: flex; align-items: center; justify-content: space-between; padding: 14px 28px; border-top: 1px solid ${C.border}; margin-top: auto; }
 `
 
 export default function RobotList() {
@@ -72,79 +72,73 @@ export default function RobotList() {
     return () => document.head.removeChild(styleEl)
   }, [])
 
-  // Datos simulados idénticos a tu imagen
-  const [robots, setRobots] = useState([
-    { id: 1, nombre: 'Robot_1', robotId: '123456664' },
-    { id: 2, nombre: 'Robot 2', robotId: '543218887' },
-    { id: 3, nombre: 'Robot 3', robotId: '543218958' },
+  const [robots] = useState([
+    { id: 1, nombre: 'Carrybot-01', robotId: '123456664', estado: 'LISTO', ubicacion: 'Almacén Central' },
+    { id: 2, nombre: 'Carrybot-02', robotId: '543218887', estado: 'EN RUTA', ubicacion: 'Almacén Central' },
+    { id: 3, nombre: 'Carrybot-03', robotId: '543218958', estado: 'DESCONECTADO', ubicacion: 'Almacén Central' },
   ])
-
-  const handleCerrarSesion = () => {
-    if (onLogout) onLogout(); // Esto borra el usuario de la memoria (App.jsx)
-    navigate('/login');       // Esto te echa al login
-  }
 
   return (
     <div className="cb-page">
       <nav className="cb-navbar">
         <div style={{ fontSize: 32, marginRight: 4 }}>🤖</div>
         <span className="cb-logo-text">Carry<span>bot</span></span>
-
+        
         <div className="cb-nav-links">
-          <button className="cb-nav-btn active">Inicio</button>
-          <button className="cb-nav-btn">¡Conéctate!</button>
-          <button className="cb-nav-btn">Registro</button>
+          <button className="cb-nav-btn" onClick={() => navigate('/')}>Inicio</button>
+          <button className="cb-nav-btn" onClick={() => navigate('/robots')}>Robots</button>
+          <button className="cb-nav-btn" onClick={() => navigate('/incidencias')}>Incidencias</button>
         </div>
 
         <div className="cb-nav-spacer" />
-        
-        <button className="cb-nav-logout" onClick={handleCerrarSesion}>
-          CERRAR SESIÓN
-        </button>
+        <button className="cb-nav-logout" onClick={() => navigate('/login')}>CERRAR SESIÓN</button>
       </nav>
 
-      <button className="cb-back" onClick={() => navigate(-1)}>
-        ‹ VOLVER
-      </button>
+      <button className="cb-back" onClick={() => navigate(-1)}>‹ VOLVER</button>
 
       <div className="cb-main-wrap">
-        <div className="cb-table-container">
-          <table className="cb-table">
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Nombre</th>
-                <th>ID del Robot</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {robots.map((robot, index) => (
-                <tr key={robot.id}>
-                  {/* Replicamos el símbolo '^' de tu foto para los items siguientes */}
-                  <td>{index === 0 ? robot.id : '^'}</td>
-                  <td>{robot.nombre}</td>
-                  <td>{robot.robotId}</td>
-                  <td className="cb-action-cell">
-                    {/* El botón de acceso que redirige al control del robot */}
-                    <button 
-                      className="cb-btn-access" 
-                      onClick={() => navigate(`/robot/${robot.id}`)}
-                    >
-                      Acceso al Robot
-                    </button>
-                    <button className="cb-btn-edit">EDITAR</button>
-                    <button 
-                      className="cb-btn-delete" 
-                      onClick={() => alert('¿Seguro que quieres eliminar este robot?')}
-                    >
-                      ELIMINAR
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <h1 className="cb-title">Flota de Robots Activos</h1>
+        
+        <div className="cb-grid">
+          {robots.map((robot) => (
+            <div key={robot.id} className="cb-card">
+              <div className="cb-card-header">
+                <h3>{robot.nombre}</h3>
+                <div style={{fontSize: 20}}>🤖</div>
+              </div>
+              
+              <div className="cb-card-body">
+                <div className={`cb-badge ${
+                  robot.estado === 'LISTO' ? 'status-listo' : 
+                  robot.estado === 'EN RUTA' ? 'status-ruta' : 'status-off'
+                }`}>
+                  <div className="dot"></div>
+                  {robot.estado}
+                </div>
+
+                <div className="cb-info-row">
+                  <span className="cb-info-label">ID del Robot:</span>
+                  <span>{robot.robotId}</span>
+                </div>
+
+                <div className="cb-info-row">
+                  <span className="cb-info-label">Última ubicación:</span>
+                  <span>{robot.ubicacion}</span>
+                </div>
+
+                {robot.estado === 'DESCONECTADO' ? (
+                  <button className="cb-btn-outline" onClick={() => alert('Viendo registros...')}>VER REGISTRO</button>
+                ) : (
+                  <button 
+                    className="cb-btn-main"
+                    onClick={() => navigate(`/robot/${robot.id}`)}
+                  >
+                    PANEL DE CONTROL
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 
@@ -154,9 +148,7 @@ export default function RobotList() {
           <span style={{ marginLeft: 8 }}>© Copyright Carrybot</span>
         </div>
         <div className="cb-footer-icons">
-          <span>🐦</span>
-          <span>📸</span>
-          <span>📘</span>
+          <span>🐦</span> <span>📸</span> <span>📘</span>
         </div>
       </footer>
     </div>

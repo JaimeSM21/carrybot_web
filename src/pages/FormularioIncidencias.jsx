@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
+
+//Estilo css
 const C = {
   navy: '#1a2d5a',
   yellow: '#f5c518',
