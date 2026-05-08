@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import { draw_occupancy_grid } from '../js/draw_occupancy_grid.js';
 // ─── Colores Carrybot (igual que la imagen de referencia) ───────────────────
 const C = {
   navy:    "#1a2d5a",
@@ -243,11 +244,14 @@ export default function GestionRobot({ user, onLogout }) {
   const [announcement, setAnnouncement] = useState(null);
   const [activePanel, setActivePanel] = useState("teleop");
   const [mapDot, setMapDot] = useState({ left: "50%", top: "50%" });
+  const [vistaActiva, setVistaActiva] = useState("camara");
 
   const rosRef = useRef(null);
   const cmdVelRef = useRef(null);
   const odomRef = useRef(null);
   const announcRef = useRef(null);
+  const mapCanvasRef = useRef(null);
+  const positionRef = useRef({ x: 0, y: 0 });
 
   // ── Inyectar estilos ──────────────────────────────────────────────────────
   useEffect(() => {
@@ -277,10 +281,36 @@ export default function GestionRobot({ user, onLogout }) {
         const x = msg.pose.pose.position.x;
         const y = msg.pose.pose.position.y;
         setPosition({ x, y });
+        positionRef.current = { x, y };
         // Mover punto en el mini-mapa (normalizado aprox -5..15 → 0..100%)
         const px = Math.min(100, Math.max(0, ((x + 5) / 20) * 100));
         const py = Math.min(100, Math.max(0, (1 - (y + 5) / 20) * 100));
         setMapDot({ left: `${px}%`, top: `${py}%` });
+      });
+
+      // Suscripción al topic /map para el minimapa
+      const mapTopic = new window.ROSLIB.Topic({
+        ros,
+        name: '/map',
+        messageType: 'nav_msgs/msg/OccupancyGrid',
+      });
+      console.log('Suscripcion /map creada');
+      mapTopic.subscribe((message) => {
+        if (mapCanvasRef.current) {
+          const res = message.info.resolution;
+          const originX = message.info.origin.position.x;
+          const originY = message.info.origin.position.y;
+
+          // ← usar positionRef.current en lugar de position
+          const robotPixelX = (positionRef.current.x - originX) / res - message.info.width / 2;
+          const robotPixelY = (positionRef.current.y - originY) / res - message.info.height / 2;
+
+          draw_occupancy_grid(
+            mapCanvasRef.current,
+            message,
+            { x: robotPixelX, y: robotPixelY }
+          );
+        }
       });
 
       // Suscripción a anuncios de entrega
@@ -460,35 +490,64 @@ export default function GestionRobot({ user, onLogout }) {
           </div>
         </div>
 
-        {/* ── COLUMNA CENTRAL: Cámara ── */}
+        {/* ── COLUMNA CENTRAL: Cámara y Mapa ── */}
         <div>
           <div className="cb-card">
-            <div className="cb-card-header"> Cámara en vivo</div>
+            <div className="cb-card-header">📷 Cámara / Mapa</div>
             <div className="cb-card-body">
-              <div className="cb-camera-box">
-                {connected ? (
-                  <>
-                    <img
-                      className="cb-camera-img"
-                      src="http://localhost:8080/stream?topic=/camera/image_raw"
-                      alt="Camera feed"
-                      onError={(e) => {
-                        e.target.style.display = 'none';
-                      }}
-                    />
-                    <div className="cb-camera-overlay" />
-                    <div className="cb-camera-label">CAM — Robot 01</div>
-                    <div className="cb-camera-status" />
-                  </>
-                ) : (
-                  <div className="cb-no-camera">
-                    <div style={{ fontSize: 40 }}>📵</div>
-                    <div>Sin señal de cámara</div>
-                    <div style={{ fontSize: 11, color: C.muted }}>Conecta el robot para ver el feed</div>
-                  </div>
-                )}
+              {/* Selector de vista */}
+              <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+                <button
+                  className={`cb-btn ${vistaActiva === 'camara' ? 'cb-btn-primary' : ''}`}
+                  style={{ flex: 1, padding: '7px 0', fontSize: 13 }}
+                  onClick={() => setVistaActiva('camara')}
+                >
+                  📷 Cámara
+                </button>
+                <button
+                  className={`cb-btn ${vistaActiva === 'mapa' ? 'cb-btn-primary' : ''}`}
+                  style={{ flex: 1, padding: '7px 0', fontSize: 13 }}
+                  onClick={() => setVistaActiva('mapa')}
+                >
+                  🗺 Mapa
+                </button>
               </div>
-
+              {/* Contenedor unificado — mismo tamaño para ambos */}
+              <div style={{ position: 'relative', width: '100%', aspectRatio: '16/9', background: '#0d1117', borderRadius: 8, overflow: 'hidden' }}>
+                {/* CÁMARA */}
+                <div style={{ display: vistaActiva === 'camara' ? 'block' : 'none', width: '100%', height: '100%' }}>
+                  {connected ? (
+                    <>
+                      <img
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        src="http://localhost:8080/stream?topic=/camera/image_raw"
+                        alt="Camera feed"
+                      />
+                      <div className="cb-camera-overlay" />
+                      <div className="cb-camera-label">CAM — Robot 01</div>
+                      <div className="cb-camera-status" />
+                    </>
+                  ) : (
+                    <div className="cb-no-camera">
+                      <div style={{ fontSize: 40 }}>📵</div>
+                      <div>Sin señal de cámara</div>
+                    </div>
+                  )}
+                </div>
+                {/* MAPA */}
+                <div style={{ display: vistaActiva === 'mapa' ? 'block' : 'none', width: '100%', height: '100%' }}>
+                  <canvas
+                    ref={mapCanvasRef}
+                    style={{ width: '100%', height: '100%', imageRendering: 'pixelated', display: 'block' }}
+                  />
+                  {!connected && (
+                    <div className="cb-no-camera">
+                      <div style={{ fontSize: 40 }}>🗺</div>
+                      <div>Sin datos de mapa</div>
+                    </div>
+                  )}
+                </div>
+              </div>
               {/* Anuncio de entrega */}
               {announcement && (
                 <div className="cb-announcement">
@@ -611,37 +670,7 @@ export default function GestionRobot({ user, onLogout }) {
           )}
         </div>
 
-        {/* ── COLUMNA DERECHA: Mapa ── */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          <div className="cb-card">
-            <div className="cb-card-header"> Mapa</div>
-            <div className="cb-card-body">
-              <div className="cb-map-box">
-                <img
-                  className="cb-map-img"
-                  src="https://picsum.photos/seed/warehousemap/200/200"
-                  alt="Mapa del warehouse"
-                  style={{ filter: "grayscale(60%) contrast(1.1)" }}
-                />
-                {connected && (
-                  <div
-                    className="cb-map-dot"
-                    style={{ left: mapDot.left, top: mapDot.top }}
-                    title={`x: ${position.x.toFixed(2)}, y: ${position.y.toFixed(2)}`}
-                  />
-                )}
-                <div className="cb-map-label">Warehouse</div>
-              </div>
-              <div style={{ marginTop: 10, fontSize: 12, color: C.muted, textAlign: "center" }}>
-                {connected ? (
-                  <>🟡 Robot en ({position.x.toFixed(1)}, {position.y.toFixed(1)})</>
-                ) : (
-                  "Sin localización"
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
+
         {/* Botón STOP — siempre visible cuando está conectado */}
         {connected && (
           <div style={{ marginTop: 12 }}>
