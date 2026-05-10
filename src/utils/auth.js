@@ -33,31 +33,26 @@ export function logoutSession() {
 }
 
 export async function registerUser({ name, email, password }) {
-  await wait()
+  const response = await fetch("http://localhost:8000/usuarios/registro", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      nombre: name.trim(),
+      email: email.trim().toLowerCase(),
+      password,
+    }),
+  })
 
-  const normalizedEmail = email.trim().toLowerCase()
-  const users = getUsers()
-  const exists = users.some((user) => user.email === normalizedEmail)
+  const data = await response.json()
 
-  if (exists) {
-    throw new Error('Ya existe una cuenta con ese correo.')
+  if (!response.ok) {
+    throw new Error(data.detail || "No se pudo completar el registro.")
   }
-
-  const newUser = {
-    id: crypto.randomUUID(),
-    name: name.trim(),
-    email: normalizedEmail,
-    password,
-    createdAt: new Date().toISOString(),
-  }
-
-  const nextUsers = [...users, newUser]
-  writeJson(USERS_KEY, nextUsers)
 
   const sessionUser = {
-    id: newUser.id,
-    name: newUser.name,
-    email: newUser.email,
+    id: null,
+    name: name.trim(),
+    email: email.trim().toLowerCase(),
   }
 
   saveSessionUser(sessionUser)
@@ -65,24 +60,26 @@ export async function registerUser({ name, email, password }) {
 }
 
 export async function loginUser({ email, password }) {
-  await wait()
+  const response = await fetch("http://localhost:8000/usuarios/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      email: email.trim().toLowerCase(),
+      password,
+    }),
+  })
 
-  const normalizedEmail = email.trim().toLowerCase()
-  const users = getUsers()
-  const foundUser = users.find((user) => user.email === normalizedEmail)
+  const data = await response.json()
 
-  if (!foundUser) {
-    throw new Error('No existe ninguna cuenta registrada con ese correo.')
-  }
-
-  if (foundUser.password !== password) {
-    throw new Error('La contraseña no es correcta.')
+  if (!response.ok) {
+    throw new Error(data.detail || "No se pudo iniciar sesión.")
   }
 
   const sessionUser = {
-    id: foundUser.id,
-    name: foundUser.name,
-    email: foundUser.email,
+    id: data.id,
+    name: data.nombre,
+    email: data.email,
+    tipo: data.tipo,
   }
 
   saveSessionUser(sessionUser)
