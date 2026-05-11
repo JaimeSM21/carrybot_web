@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { draw_occupancy_grid } from '../js/draw_occupancy_grid.js';
-// ─── Colores Carrybot (igual que la imagen de referencia) ───────────────────
+
+// ─── Colores Carrybot ────────────────────────────────────────────────────────
 const C = {
   navy:    "#1a2d5a",
   yellow:  "#f5c518",
@@ -15,7 +16,7 @@ const C = {
   cardBg:  "#ffffff",
 };
 
-// ─── Roslib helpers (carga dinámica para no depender de npm) ─────────────────
+// ─── Roslib helpers ───────────────────────────────────────────────────────────
 function useRoslib() {
   const [loaded, setLoaded] = useState(!!window.ROSLIB);
   useEffect(() => {
@@ -28,7 +29,7 @@ function useRoslib() {
   return loaded;
 }
 
-// ─── Estilos globales ────────────────────────────────────────────────────────
+// ─── Estilos globales ─────────────────────────────────────────────────────────
 const GLOBAL_CSS = `
   @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap');
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -90,7 +91,6 @@ const GLOBAL_CSS = `
   }
   .cb-card-body { padding: 16px; }
 
-  /* Panel izquierdo: opciones de manejo */
   .cb-control-btn {
     width: 100%; display: flex; align-items: center; gap: 10px;
     background: ${C.gray}; border: 1.5px solid ${C.border};
@@ -101,21 +101,18 @@ const GLOBAL_CSS = `
   }
   .cb-control-btn:last-child { margin-bottom: 0; }
   .cb-control-btn:hover { background: ${C.navy}; color: ${C.white}; border-color: ${C.navy}; }
-  .cb-control-btn:hover .cb-icon { filter: brightness(10); }
   .cb-control-btn.active { background: ${C.yellow}; color: ${C.navy}; border-color: ${C.yellow}; }
 
-  /* Cámara */
   .cb-camera-box {
     position: relative; width: 50%; aspect-ratio: 16/9;
     background: #0d1117; border-radius: 8px; overflow: hidden;
     display: flex; align-items: center; justify-content: center;
   }
-  .cb-camera-img { width: 100%; height: 100%; object-fit: cover; 
+  .cb-camera-img { width: 100%; height: 100%; object-fit: cover;
   display: flex; align-items: center; justify-content: center;}
   .cb-camera-overlay {
     position: absolute; top: 0; left: 0; right: 0; bottom: 0;
     background: linear-gradient(180deg, transparent 60%, rgba(0,0,0,.5) 100%);
-    
     pointer-events: none;
   }
   .cb-camera-label {
@@ -136,7 +133,72 @@ const GLOBAL_CSS = `
     display: flex; flex-direction: column; align-items: center; gap: 8px;
   }
 
-  /* Joystick de dirección */
+  /* ── Badge de detección sobre la cámara ── */
+  .cb-detection-badge {
+    position: absolute; top: 10px; left: 10px;
+    display: flex; flex-direction: column; gap: 4px;
+    pointer-events: none; z-index: 10;
+  }
+  .cb-det-pill {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 3px 9px; border-radius: 20px;
+    font-size: 11px; font-weight: 700; letter-spacing: .4px;
+    text-transform: uppercase; backdrop-filter: blur(4px);
+  }
+  .cb-det-pill.box  { background: rgba(34,197,94,.85);  color: #fff; }
+  .cb-det-pill.qr   { background: rgba(59,130,246,.85); color: #fff; }
+  .cb-det-pill.none { background: rgba(0,0,0,.45);      color: rgba(255,255,255,.7); }
+  .cb-det-dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+
+  /* ── Toggle cámara procesada ── */
+  .cb-cam-toggle {
+    position: absolute; bottom: 10px; right: 10px;
+    background: rgba(26,45,90,.75); color: ${C.white};
+    border: 1.5px solid rgba(255,255,255,.3); border-radius: 6px;
+    padding: 4px 10px; font-size: 11px; font-weight: 700;
+    cursor: pointer; letter-spacing: .4px; text-transform: uppercase;
+    transition: all .15s; z-index: 10;
+  }
+  .cb-cam-toggle:hover { background: ${C.navy}; border-color: ${C.yellow}; color: ${C.yellow}; }
+  .cb-cam-toggle.active { background: ${C.yellow}; color: ${C.navy}; border-color: ${C.yellow}; }
+
+  /* ── Panel Visión IA ── */
+  .cb-vision-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;
+  }
+  .cb-vision-stat {
+    background: ${C.gray}; border: 1.5px solid ${C.border};
+    border-radius: 8px; padding: 12px; text-align: center;
+  }
+  .cb-vision-stat-val {
+    font-size: 28px; font-weight: 700; color: ${C.navy};
+    font-family: 'Barlow Condensed', sans-serif;
+  }
+  .cb-vision-stat-val.green { color: ${C.success}; }
+  .cb-vision-stat-val.blue  { color: #3b82f6; }
+  .cb-vision-stat-label { font-size: 11px; color: ${C.muted}; font-weight: 600; text-transform: uppercase; margin-top: 2px; }
+
+  .cb-qr-result {
+    background: #eff6ff; border: 1.5px solid #3b82f6;
+    border-radius: 8px; padding: 12px; margin-top: 8px;
+  }
+  .cb-qr-result-title { font-size: 11px; font-weight: 700; color: #3b82f6; text-transform: uppercase; letter-spacing: .4px; margin-bottom: 8px; }
+  .cb-qr-field { display: flex; justify-content: space-between; align-items: center; font-size: 13px; padding: 4px 0; border-bottom: 1px solid #dbeafe; }
+  .cb-qr-field:last-child { border-bottom: none; }
+  .cb-qr-field-label { color: ${C.muted}; font-weight: 500; }
+  .cb-qr-field-val { color: ${C.text}; font-weight: 700; }
+  .cb-qr-raw {
+    background: #0d1117; border-radius: 6px; padding: 8px 10px;
+    font-size: 11px; color: #7ee787; font-family: monospace;
+    word-break: break-all; margin-top: 8px;
+  }
+
+  .cb-no-detection {
+    text-align: center; padding: 24px 16px; color: ${C.muted};
+    font-size: 13px; display: flex; flex-direction: column; align-items: center; gap: 8px;
+  }
+
+  /* Joystick */
   .cb-dpad {
     display: grid; grid-template-columns: repeat(3, 44px);
     grid-template-rows: repeat(3, 44px); gap: 4px;
@@ -176,9 +238,7 @@ const GLOBAL_CSS = `
   }
 
   /* Telemetría */
-  .cb-telem {
-    display: flex; flex-direction: column; gap: 10px;
-  }
+  .cb-telem { display: flex; flex-direction: column; gap: 10px; }
   .cb-telem-row {
     display: flex; justify-content: space-between; align-items: center;
     font-size: 13px; padding-bottom: 8px; border-bottom: 1px solid ${C.border};
@@ -187,20 +247,15 @@ const GLOBAL_CSS = `
   .cb-telem-label { color: ${C.muted}; font-weight: 500; }
   .cb-telem-val { color: ${C.text}; font-weight: 700; font-variant-numeric: tabular-nums; }
 
-  /* Conexión rosbridge */
-  .cb-conn-row {
-    display: flex; gap: 8px; margin-bottom: 12px; align-items: center;
-  }
+  /* Conexión */
+  .cb-conn-row { display: flex; gap: 8px; margin-bottom: 12px; align-items: center; }
   .cb-conn-input {
     flex: 1; border: 1.5px solid ${C.border}; border-radius: 6px;
     padding: 7px 10px; font-family: 'Barlow', sans-serif; font-size: 13px;
     color: ${C.text}; outline: none;
   }
   .cb-conn-input:focus { border-color: ${C.navy}; }
-  .cb-conn-dot {
-    width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
-    background: ${C.danger};
-  }
+  .cb-conn-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; background: ${C.danger}; }
   .cb-conn-dot.on { background: ${C.success}; box-shadow: 0 0 6px ${C.success}; animation: pulse 2s infinite; }
   .cb-btn {
     padding: 8px 14px; border-radius: 6px; cursor: pointer;
@@ -233,47 +288,54 @@ const GLOBAL_CSS = `
   .cb-footer-icons { display: flex; gap: 14px; font-size: 18px; }
 `;
 
-// ─── Componente principal ────────────────────────────────────────────────────
+// ─── Componente principal ─────────────────────────────────────────────────────
 export default function GestionRobot({ user, onLogout }) {
-  const navigate = useNavigate();
+  const navigate    = useNavigate();
   const roslibLoaded = useRoslib();
 
-  const [address, setAddress] = useState("ws://127.0.0.1:9090/");
-  const [connected, setConnected] = useState(false);
-  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [address,      setAddress]      = useState("ws://127.0.0.1:9090/");
+  const [connected,    setConnected]    = useState(false);
+  const [position,     setPosition]     = useState({ x: 0, y: 0 });
   const [announcement, setAnnouncement] = useState(null);
-  const [activePanel, setActivePanel] = useState("teleop");
-  const [mapDot, setMapDot] = useState({ left: "50%", top: "50%" });
-  const [vistaActiva, setVistaActiva] = useState("camara");
+  const [activePanel,  setActivePanel]  = useState("teleop");
+  const [mapDot,       setMapDot]       = useState({ left: "50%", top: "50%" });
+  const [vistaActiva,  setVistaActiva]  = useState("camara");
 
-  const rosRef = useRef(null);
-  const cmdVelRef = useRef(null);
-  const odomRef = useRef(null);
-  const announcRef = useRef(null);
+  // ── Estado de visión artificial ───────────────────────────────────────────
+  /** detection: { box_detected, boxes, qr_detected, qr_data, qr_parsed } | null */
+  const [detection,      setDetection]      = useState(null);
+  /** showProcessed: muestra /camera/processed en lugar de /camera/image_raw */
+  const [showProcessed,  setShowProcessed]  = useState(false);
+
+  const rosRef       = useRef(null);
+  const cmdVelRef    = useRef(null);
+  const odomRef      = useRef(null);
+  const announcRef   = useRef(null);
   const mapCanvasRef = useRef(null);
-  const positionRef = useRef({ x: 0, y: 0 });
+  const positionRef  = useRef({ x: 0, y: 0 });
 
   // ── Inyectar estilos ──────────────────────────────────────────────────────
   useEffect(() => {
-    const styleEl = document.createElement("style");
-    styleEl.textContent = GLOBAL_CSS;
-    document.head.appendChild(styleEl);
-    return () => document.head.removeChild(styleEl);
+    const el = document.createElement("style");
+    el.textContent = GLOBAL_CSS;
+    document.head.appendChild(el);
+    return () => document.head.removeChild(el);
   }, []);
 
   // ── Conectar / desconectar ────────────────────────────────────────────────
   const connect = useCallback(() => {
     if (!roslibLoaded || !window.ROSLIB) return;
     const ros = new window.ROSLIB.Ros({ url: address });
+
     ros.on("connection", () => {
       setConnected(true);
 
-      // Topic /cmd_vel
+      // /cmd_vel
       cmdVelRef.current = new window.ROSLIB.Topic({
         ros, name: "/cmd_vel", messageType: "geometry_msgs/msg/Twist",
       });
 
-      // Suscripción a /odom
+      // /odom
       odomRef.current = new window.ROSLIB.Topic({
         ros, name: "/odom", messageType: "nav_msgs/msg/Odometry",
       });
@@ -282,29 +344,24 @@ export default function GestionRobot({ user, onLogout }) {
         const y = msg.pose.pose.position.y;
         setPosition({ x, y });
         positionRef.current = { x, y };
-        // Mover punto en el mini-mapa (normalizado aprox -5..15 → 0..100%)
         const px = Math.min(100, Math.max(0, ((x + 5) / 20) * 100));
         const py = Math.min(100, Math.max(0, (1 - (y + 5) / 20) * 100));
         setMapDot({ left: `${px}%`, top: `${py}%` });
       });
 
-      // Suscripción al topic /map para el minimapa
+      // /map — minimapa
       const mapTopic = new window.ROSLIB.Topic({
         ros,
         name: '/map',
         messageType: 'nav_msgs/msg/OccupancyGrid',
       });
-      console.log('Suscripcion /map creada');
       mapTopic.subscribe((message) => {
         if (mapCanvasRef.current) {
-          const res = message.info.resolution;
+          const res     = message.info.resolution;
           const originX = message.info.origin.position.x;
           const originY = message.info.origin.position.y;
-
-          // ← usar positionRef.current en lugar de position
-          const robotPixelX = (positionRef.current.x - originX) / res - message.info.width / 2;
+          const robotPixelX = (positionRef.current.x - originX) / res - message.info.width  / 2;
           const robotPixelY = (positionRef.current.y - originY) / res - message.info.height / 2;
-
           draw_occupancy_grid(
             mapCanvasRef.current,
             message,
@@ -313,7 +370,7 @@ export default function GestionRobot({ user, onLogout }) {
         }
       });
 
-      // Suscripción a anuncios de entrega
+      // /delivery/announcement
       announcRef.current = new window.ROSLIB.Topic({
         ros, name: "/delivery/announcement", messageType: "std_msgs/msg/String",
       });
@@ -321,37 +378,53 @@ export default function GestionRobot({ user, onLogout }) {
         setAnnouncement(msg.data);
         setTimeout(() => setAnnouncement(null), 8000);
       });
+
+      // ── /package/detection — NUEVO ────────────────────────────────────────
+      // Suscribirse al topic publicado por package_detector.py (JSON string).
+      // Usamos setDetection directamente: React no tiene closures stale aquí
+      // porque no leemos el estado anterior dentro del callback.
+      const detectionTopic = new window.ROSLIB.Topic({
+        ros,
+        name: '/package/detection',
+        messageType: 'std_msgs/msg/String',
+      });
+      detectionTopic.subscribe((msg) => {
+        try {
+          const parsed = JSON.parse(msg.data);
+          setDetection(parsed);
+        } catch {
+          console.warn('[CarryBot] Error parseando /package/detection:', msg.data);
+        }
+      });
     });
+
     ros.on("error", () => setConnected(false));
-    ros.on("close", () => setConnected(false));
+    ros.on("close", () => {
+      setConnected(false);
+      setDetection(null);
+    });
     rosRef.current = ros;
   }, [roslibLoaded, address]);
 
   const disconnect = useCallback(() => {
     if (rosRef.current) {
       rosRef.current.close();
-      rosRef.current = null;
+      rosRef.current  = null;
       cmdVelRef.current = null;
     }
     setConnected(false);
+    setDetection(null);
   }, []);
 
-
   const publishCommand = useCallback((topicName, value) => {
-    if (!rosRef.current) {
-        console.warn('No hay conexion ROS activa');
-        return;
-    }
+    if (!rosRef.current) { console.warn('No hay conexión ROS activa'); return; }
     const topic = new window.ROSLIB.Topic({
-        ros: rosRef.current,
-        name: topicName,
-        messageType: 'std_msgs/msg/String',
+      ros: rosRef.current, name: topicName, messageType: 'std_msgs/msg/String',
     });
     topic.publish(new window.ROSLIB.Message({ data: value }));
     console.log(`Publicado en ${topicName}: ${value}`);
   }, []);
 
-  // ── Publicar velocidad ────────────────────────────────────────────────────
   const publishVel = useCallback((lx, az) => {
     if (!cmdVelRef.current) return;
     cmdVelRef.current.publish(new window.ROSLIB.Message({
@@ -361,6 +434,11 @@ export default function GestionRobot({ user, onLogout }) {
   }, []);
 
   const stop = useCallback(() => publishVel(0, 0), [publishVel]);
+
+  // ── URL de la cámara (raw o procesada) ───────────────────────────────────
+  const cameraUrl = showProcessed
+    ? "http://localhost:8080/stream?topic=/camera/processed"
+    : "http://localhost:8080/stream?topic=/camera/image_raw";
 
   // ── Renderizado ───────────────────────────────────────────────────────────
   return (
@@ -377,10 +455,7 @@ export default function GestionRobot({ user, onLogout }) {
         <div className="cb-nav-spacer" />
         <button
           className="cb-nav-session"
-          onClick={() => {
-            onLogout?.();
-            navigate("/login", { replace: true });
-          }}
+          onClick={() => { onLogout?.(); navigate("/login", { replace: true }); }}
         >
           Cerrar sesión
         </button>
@@ -394,45 +469,31 @@ export default function GestionRobot({ user, onLogout }) {
       {/* LAYOUT PRINCIPAL */}
       <div className="cb-layout">
 
-        {/* ── COLUMNA IZQUIERDA: Opciones de manejo ── */}
+        {/* ── COLUMNA IZQUIERDA ── */}
         <div>
           <div style={{ fontSize: 13, color: C.muted, fontWeight: 600, marginBottom: 12 }}>
             Sesión activa: {user?.name || user?.email || "Operador"}
           </div>
-          
+
           <div className="cb-card">
             <div className="cb-card-header">⚙ Opciones de manejo del robot</div>
             <div className="cb-card-body" style={{ display: "flex", flexDirection: "column", gap: 0 }}>
-              <button
-                className={`cb-control-btn${activePanel === "teleop" ? " active" : ""}`}
-                onClick={() => setActivePanel("teleop")}
-              >
-                 Control manual
-              </button>
-              <button
-                className={`cb-control-btn${activePanel === "nav" ? " active" : ""}`}
-                onClick={() => setActivePanel("nav")}
-              >
-                 Navegación autónoma
-              </button>
-              <button
-                className={`cb-control-btn${activePanel === "patrol" ? " active" : ""}`}
-                onClick={() => setActivePanel("patrol")}
-              >
-                Patrulla de zona
-              </button>
-              <button
-                className={`cb-control-btn${activePanel === "delivery" ? " active" : ""}`}
-                onClick={() => setActivePanel("delivery")}
-              >
-                 Gestión de entregas
-              </button>
-              <button
-                className={`cb-control-btn${activePanel === "status" ? " active" : ""}`}
-                onClick={() => setActivePanel("status")}
-              >
-                 Estado del robot
-              </button>
+              {[
+                ["teleop",    " Control manual"],
+                ["nav",       " Navegación autónoma"],
+                ["patrol",    "Patrulla de zona"],
+                ["delivery",  " Gestión de entregas"],
+                ["vision",    "🔍 Visión IA"],   // ← NUEVO
+                ["status",    " Estado del robot"],
+              ].map(([key, label]) => (
+                <button
+                  key={key}
+                  className={`cb-control-btn${activePanel === key ? " active" : ""}`}
+                  onClick={() => setActivePanel(key)}
+                >
+                  {label}
+                </button>
+              ))}
             </div>
           </div>
 
@@ -490,7 +551,7 @@ export default function GestionRobot({ user, onLogout }) {
           </div>
         </div>
 
-        {/* ── COLUMNA CENTRAL: Cámara y Mapa ── */}
+        {/* ── COLUMNA CENTRAL: Cámara / Mapa ── */}
         <div>
           <div className="cb-card">
             <div className="cb-card-header">📷 Cámara / Mapa</div>
@@ -512,20 +573,57 @@ export default function GestionRobot({ user, onLogout }) {
                   🗺 Mapa
                 </button>
               </div>
-              {/* Contenedor unificado — mismo tamaño para ambos */}
-              <div style={{ position: 'relative', width: '100%', aspectRatio: '16/9', background: '#0d1117', borderRadius: 8, overflow: 'hidden' }}>
-                {/* CÁMARA */}
+
+              {/* Contenedor unificado */}
+              <div style={{
+                position: 'relative', width: '100%', aspectRatio: '16/9',
+                background: '#0d1117', borderRadius: 8, overflow: 'hidden',
+              }}>
+                {/* ── CÁMARA ── */}
                 <div style={{ display: vistaActiva === 'camara' ? 'block' : 'none', width: '100%', height: '100%' }}>
                   {connected ? (
                     <>
                       <img
                         style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                        src="http://localhost:8080/stream?topic=/camera/image_raw"
+                        src={cameraUrl}
                         alt="Camera feed"
                       />
                       <div className="cb-camera-overlay" />
-                      <div className="cb-camera-label">CAM — Robot 01</div>
+                      <div className="cb-camera-label">
+                        {showProcessed ? 'CAM — Visión IA activa' : 'CAM — Robot 01'}
+                      </div>
                       <div className="cb-camera-status" />
+
+                      {/* ── Badge de detección (NUEVO) ── */}
+                      <div className="cb-detection-badge">
+                        {detection ? (
+                          <>
+                            <span className={`cb-det-pill ${detection.box_detected ? 'box' : 'none'}`}>
+                              <span className="cb-det-dot" />
+                              {detection.box_detected
+                                ? `${detection.boxes.length} caja${detection.boxes.length > 1 ? 's' : ''}`
+                                : 'Sin cajas'}
+                            </span>
+                            <span className={`cb-det-pill ${detection.qr_detected ? 'qr' : 'none'}`}>
+                              <span className="cb-det-dot" />
+                              {detection.qr_detected ? 'QR leído' : 'Sin QR'}
+                            </span>
+                          </>
+                        ) : (
+                          <span className="cb-det-pill none">
+                            🔍 Iniciando visión…
+                          </span>
+                        )}
+                      </div>
+
+                      {/* ── Toggle cámara procesada (NUEVO) ── */}
+                      <button
+                        className={`cb-cam-toggle${showProcessed ? ' active' : ''}`}
+                        onClick={() => setShowProcessed(v => !v)}
+                        title={showProcessed ? 'Ver cámara original' : 'Ver cámara con detecciones'}
+                      >
+                        {showProcessed ? '🔍 IA ON' : '🔍 IA OFF'}
+                      </button>
                     </>
                   ) : (
                     <div className="cb-no-camera">
@@ -534,7 +632,8 @@ export default function GestionRobot({ user, onLogout }) {
                     </div>
                   )}
                 </div>
-                {/* MAPA */}
+
+                {/* ── MAPA ── */}
                 <div style={{ display: vistaActiva === 'mapa' ? 'block' : 'none', width: '100%', height: '100%' }}>
                   <canvas
                     ref={mapCanvasRef}
@@ -548,6 +647,7 @@ export default function GestionRobot({ user, onLogout }) {
                   )}
                 </div>
               </div>
+
               {/* Anuncio de entrega */}
               {announcement && (
                 <div className="cb-announcement">
@@ -558,7 +658,8 @@ export default function GestionRobot({ user, onLogout }) {
             </div>
           </div>
 
-          {/* Panel dinámico según selección */}
+          {/* ── Panel dinámico ── */}
+
           {activePanel === "teleop" && (
             <div className="cb-card" style={{ marginTop: 12 }}>
               <div className="cb-card-header"> Control manual — Teleop</div>
@@ -568,13 +669,13 @@ export default function GestionRobot({ user, onLogout }) {
                 </p>
                 <div className="cb-dpad">
                   <div className="cb-dpad-btn empty" />
-                  <button className="cb-dpad-btn" onClick={() => publishVel(0.2, 0)} title="Adelante">▲</button>
+                  <button className="cb-dpad-btn" onClick={() => publishVel(0.2, 0)}   title="Adelante">▲</button>
                   <div className="cb-dpad-btn empty" />
-                  <button className="cb-dpad-btn" onClick={() => publishVel(0, 0.5)} title="Girar izquierda">◄</button>
-                  <button className="cb-dpad-btn center" onClick={stop} title="Parar">STOP</button>
-                  <button className="cb-dpad-btn" onClick={() => publishVel(0, -0.5)} title="Girar derecha">►</button>
+                  <button className="cb-dpad-btn" onClick={() => publishVel(0, 0.5)}   title="Girar izquierda">◄</button>
+                  <button className="cb-dpad-btn center" onClick={stop}                title="Parar">STOP</button>
+                  <button className="cb-dpad-btn" onClick={() => publishVel(0, -0.5)}  title="Girar derecha">►</button>
                   <div className="cb-dpad-btn empty" />
-                  <button className="cb-dpad-btn" onClick={() => publishVel(-0.2, 0)} title="Atrás">▼</button>
+                  <button className="cb-dpad-btn" onClick={() => publishVel(-0.2, 0)}  title="Atrás">▼</button>
                   <div className="cb-dpad-btn empty" />
                 </div>
                 <p style={{ fontSize: 11, color: C.muted }}>Vel. lineal: 0.2 m/s · Vel. angular: 0.5 rad/s</p>
@@ -590,13 +691,8 @@ export default function GestionRobot({ user, onLogout }) {
                   Envía el robot a un destino predefinido del warehouse.
                 </p>
                 {["Estanteria1", "Estanteria2", "PuntoDeCarga"].map((dest) => (
-                  <button
-                    key={dest}
-                    className="cb-control-btn"
-                    style={{ marginBottom: 8 }}
-                    disabled={!connected}
-                    onClick={() => publishCommand('/web/nav_goal', dest)}
-                  >
+                  <button key={dest} className="cb-control-btn" style={{ marginBottom: 8 }}
+                    disabled={!connected} onClick={() => publishCommand('/web/nav_goal', dest)}>
                      {dest}
                   </button>
                 ))}
@@ -608,17 +704,12 @@ export default function GestionRobot({ user, onLogout }) {
             <div className="cb-card" style={{ marginTop: 12 }}>
               <div className="cb-card-header"> Patrulla de zona</div>
               <div className="cb-card-body">
-                <p style={{ fontSize: 13, color: "var(--color-text-secondary)", marginBottom: 12 }}>
+                <p style={{ fontSize: 13, color: C.muted, marginBottom: 12 }}>
                   El robot recorrerá todos los waypoints de la zona en orden.
                 </p>
                 {["Zona1", "Zona2"].map((zone) => (
-                  <button
-                    key={zone}
-                    className="cb-control-btn"
-                    style={{ marginBottom: 8 }}
-                    disabled={!connected}
-                    onClick={() => publishCommand('/web/patrol_goal', zone)}
-                  >
+                  <button key={zone} className="cb-control-btn" style={{ marginBottom: 8 }}
+                    disabled={!connected} onClick={() => publishCommand('/web/patrol_goal', zone)}>
                      {zone}
                   </button>
                 ))}
@@ -630,18 +721,115 @@ export default function GestionRobot({ user, onLogout }) {
             <div className="cb-card" style={{ marginTop: 12 }}>
               <div className="cb-card-header"> Gestión de entregas</div>
               <div className="cb-card-body">
-                {/* ── Ruta fija: todos los pedidos ── */}
-                <p style={{ fontSize: 12, color: "var(--color-text-secondary)", marginBottom: 8 }}>
-                  Ruta automática
-                </p>
+                <p style={{ fontSize: 12, color: C.muted, marginBottom: 8 }}>Ruta automática</p>
                 <button
                   className="cb-control-btn active"
-                  style={{ marginBottom: 16, borderColor: "#f5c518", background: "#f5c518", color: "#1a2d5a" }}
+                  style={{ marginBottom: 16, borderColor: C.yellow, background: C.yellow, color: C.navy }}
                   disabled={!connected}
                   onClick={() => publishCommand('/web/ruta_fija', 'start')}
                 >
                    Iniciar ruta fija (todos los pedidos)
                 </button>
+              </div>
+            </div>
+          )}
+
+          {/* ── PANEL VISIÓN IA (NUEVO) ── */}
+          {activePanel === "vision" && (
+            <div className="cb-card" style={{ marginTop: 12 }}>
+              <div className="cb-card-header">🔍 Visión IA — Detección de paquetes</div>
+              <div className="cb-card-body">
+
+                {!connected ? (
+                  <div className="cb-no-detection">
+                    <div style={{ fontSize: 36 }}>🔌</div>
+                    <div>Conéctate a ROS para activar la detección.</div>
+                    <div style={{ fontSize: 11 }}>
+                      Asegúrate de que <code>package_detector</code> está corriendo.
+                    </div>
+                  </div>
+                ) : !detection ? (
+                  <div className="cb-no-detection">
+                    <div style={{ fontSize: 36, animation: 'pulse 1.5s infinite' }}>👁</div>
+                    <div>Esperando datos del nodo de visión…</div>
+                    <div style={{ fontSize: 11 }}>
+                      Ejecuta: <code>ros2 run carrybot_web_bridge package_detector</code>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    {/* Estadísticas rápidas */}
+                    <div className="cb-vision-grid">
+                      <div className="cb-vision-stat">
+                        <div className={`cb-vision-stat-val${detection.box_detected ? ' green' : ''}`}>
+                          {detection.boxes?.length ?? 0}
+                        </div>
+                        <div className="cb-vision-stat-label">Cajas detectadas</div>
+                      </div>
+                      <div className="cb-vision-stat">
+                        <div className={`cb-vision-stat-val${detection.qr_detected ? ' blue' : ''}`}>
+                          {detection.qr_detected ? '✓' : '—'}
+                        </div>
+                        <div className="cb-vision-stat-label">Código QR</div>
+                      </div>
+                    </div>
+
+                    {/* Resultado QR */}
+                    {detection.qr_detected && (
+                      <div className="cb-qr-result">
+                        <div className="cb-qr-result-title">📦 Datos del paquete (QR)</div>
+
+                        {detection.qr_parsed ? (
+                          /* QR en formato JSON — mostrar campos */
+                          Object.entries(detection.qr_parsed).map(([k, v]) => (
+                            <div className="cb-qr-field" key={k}>
+                              <span className="cb-qr-field-label">{k}</span>
+                              <span className="cb-qr-field-val">{String(v)}</span>
+                            </div>
+                          ))
+                        ) : (
+                          /* QR en texto libre */
+                          <div className="cb-qr-field">
+                            <span className="cb-qr-field-label">Contenido</span>
+                            <span className="cb-qr-field-val">{detection.qr_data}</span>
+                          </div>
+                        )}
+
+                        {/* Raw siempre visible como referencia */}
+                        <div className="cb-qr-raw">{detection.qr_data}</div>
+                      </div>
+                    )}
+
+                    {/* Sin resultados */}
+                    {!detection.box_detected && !detection.qr_detected && (
+                      <div className="cb-no-detection" style={{ padding: '16px 0 0' }}>
+                        <div style={{ fontSize: 28 }}>🔍</div>
+                        <div>No se detecta ningún paquete en la imagen actual.</div>
+                      </div>
+                    )}
+
+                    {/* Botón de navegación directa al destino del QR */}
+                    {detection.qr_parsed?.dest && connected && (
+                      <button
+                        className="cb-control-btn active"
+                        style={{ marginTop: 12, background: C.yellow, color: C.navy, borderColor: C.yellow }}
+                        onClick={() => publishCommand('/web/nav_goal', detection.qr_parsed.dest)}
+                      >
+                        🚀 Ir a {detection.qr_parsed.dest}
+                      </button>
+                    )}
+
+                    {/* Consejo: activar vista procesada */}
+                    <div style={{
+                      marginTop: 10, padding: '8px 10px',
+                      background: '#f0f9ff', border: '1.5px solid #bae6fd',
+                      borderRadius: 6, fontSize: 11, color: '#0369a1',
+                    }}>
+                      💡 Activa <strong>"🔍 IA ON"</strong> en la cámara para ver los
+                      bounding boxes dibujados en tiempo real.
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           )}
@@ -652,12 +840,13 @@ export default function GestionRobot({ user, onLogout }) {
               <div className="cb-card-body">
                 <div className="cb-telem">
                   {[
-                    ["Modelo", "TurtleBot3 Burger"],
-                    ["Batería", connected ? "87%" : "—"],
-                    ["Velocidad lineal", connected ? "0.00 m/s" : "—"],
+                    ["Modelo",            "TurtleBot3 Burger"],
+                    ["Batería",           connected ? "87%" : "—"],
+                    ["Velocidad lineal",  connected ? "0.00 m/s" : "—"],
                     ["Velocidad angular", connected ? "0.00 rad/s" : "—"],
-                    ["Nav2", connected ? "Activo" : "Inactivo"],
-                    ["AMCL", connected ? "Localizado" : "—"],
+                    ["Nav2",              connected ? "Activo" : "Inactivo"],
+                    ["AMCL",              connected ? "Localizado" : "—"],
+                    ["Visión IA",         connected && detection ? "Activa" : "—"],
                   ].map(([label, val]) => (
                     <div className="cb-telem-row" key={label}>
                       <span className="cb-telem-label">{label}</span>
@@ -670,22 +859,16 @@ export default function GestionRobot({ user, onLogout }) {
           )}
         </div>
 
-
         {/* Botón STOP — siempre visible cuando está conectado */}
         {connected && (
           <div style={{ marginTop: 12 }}>
             <button
               style={{
-                width: '100%',
-                padding: '12px',
-                background: '#ef4444',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                fontSize: '15px',
-                fontWeight: '700',
-                cursor: 'pointer',
-                letterSpacing: '1px',
+                width: '100%', padding: '12px',
+                background: '#ef4444', color: 'white',
+                border: 'none', borderRadius: '8px',
+                fontSize: '15px', fontWeight: '700',
+                cursor: 'pointer', letterSpacing: '1px',
                 textTransform: 'uppercase',
               }}
               onClick={() => publishCommand('/web/cancel', 'stop')}
@@ -695,8 +878,6 @@ export default function GestionRobot({ user, onLogout }) {
           </div>
         )}
       </div>
-
-      
 
       {/* FOOTER */}
       <footer className="cb-footer">
