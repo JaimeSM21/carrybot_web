@@ -2,161 +2,204 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 const C = {
-  navy: '#1a2d5a',
-  yellow: '#f5c518',
+  navy: '#1a2d5a',     // Azul marino
+  yellow: '#f5c518',   // Amarillo logo
   white: '#ffffff',
-  gray: '#f4f5f7',
-  border: '#aab7d4', 
+  bg: '#f4f7fa',       // Fondo claro
   text: '#1a2d5a',
-  access: '#1d70b8', // Azul del botón de acceso
-  danger: '#ef4444',
-  edit: '#94a3b8', 
+  danger: '#ff4d4d',
+  success: '#28a745', 
+  warning: '#f39c12',
+  blue: '#1d70b8',     // Azul botón cerrar sesión
 }
 
 const GLOBAL_CSS = `
-  @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@400;600;700&display=swap');
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Barlow', sans-serif; background: #f8fafc; }
+  body { font-family: 'Barlow', sans-serif; background: ${C.bg}; color: ${C.text}; }
 
   .cb-page { min-height: 100vh; display: flex; flex-direction: column; }
 
-  /* Navbar */
-  .cb-navbar { background: ${C.navy}; display: flex; align-items: center; gap: 12px; padding: 0 28px; height: 64px; box-shadow: 0 2px 12px rgba(26,45,90,.18); }
-  .cb-logo-text { font-family: 'Barlow Condensed', sans-serif; font-size: 26px; font-weight: 700; color: ${C.white}; letter-spacing: -0.5px; }
-  .cb-logo-text span { color: ${C.yellow}; }
-  .cb-nav-links { display: flex; gap: 4px; margin-left: 20px; }
-  .cb-nav-btn { background: transparent; border: 1px solid transparent; cursor: pointer; font-family: 'Barlow', sans-serif; font-size: 14px; font-weight: 600; color: ${C.white}; padding: 8px 16px; border-radius: 4px; text-transform: uppercase; transition: all .15s; }
-  .cb-nav-btn:hover { border-color: ${C.white}; }
-  .cb-nav-btn.active { background: ${C.yellow}; color: ${C.navy}; border-color: ${C.yellow}; }
+  /* Navbar superior */
+  .cb-navbar { background: ${C.navy}; display: flex; align-items: center; padding: 0 40px; height: 70px; }
+  .cb-logo { display: flex; align-items: center; gap: 12px; color: white; font-weight: 700; font-size: 24px; text-decoration: none; cursor: pointer; }
+  .cb-logo span { color: ${C.yellow}; }
   
-  .cb-nav-spacer { flex: 1; }
+  .cb-logo-img { height: 45px; width: auto; object-fit: contain; }
+
+  .cb-nav-links { display: flex; gap: 10px; margin-left: 40px; }
+  .cb-nav-item { background: transparent; border: 1px solid white; color: white; padding: 8px 18px; border-radius: 8px; font-weight: 600; text-transform: uppercase; font-size: 13px; cursor: pointer; transition: all 0.2s; }
+  .cb-nav-item:hover { background: rgba(255,255,255,0.1); }
+  .cb-nav-item.active { background: ${C.yellow}; color: ${C.navy}; }
+
+  .cb-nav-right { margin-left: auto; display: flex; align-items: center; gap: 15px; }
   
-  .cb-nav-logout { background: ${C.yellow}; color: ${C.navy}; border: none; border-radius: 4px; cursor: pointer; font-family: 'Barlow', sans-serif; font-size: 13px; font-weight: 700; padding: 8px 18px; text-transform: uppercase; transition: all .15s; }
-  .cb-nav-logout:hover { background: #e0b310; }
+  .cb-alert-btn { background: transparent; border: 1px solid white; color: white; padding: 8px 18px; border-radius: 8px; font-weight: 600; text-transform: uppercase; font-size: 13px; cursor: pointer; transition: all 0.2s; }
+  .cb-alert-btn:hover { background: rgba(255, 255, 255, 0.1); }
 
-  /* Main & Volver */
-  .cb-back { display: inline-flex; align-items: center; gap: 6px; margin: 20px 28px; color: ${C.white}; font-size: 14px; font-weight: 600; background: #5b8bba; border: 1px solid ${C.navy}; border-radius: 4px; padding: 8px 16px; cursor: pointer; text-transform: uppercase; transition: all .15s; width: fit-content; }
-  .cb-back:hover { background: ${C.navy}; }
+  .cb-logout-btn { background: ${C.blue}; color: white; border: none; padding: 8px 18px; border-radius: 8px; font-weight: 600; text-transform: uppercase; font-size: 13px; cursor: pointer; transition: background 0.2s; }
+  .cb-logout-btn:hover { background: #155a96; }
 
-  .cb-main-wrap { flex: 1; padding: 0 28px 40px; max-width: 1000px; margin: 0 auto; width: 100%; }
+  .cb-main { flex: 1; padding: 60px 40px; max-width: 1300px; margin: 0 auto; width: 100%; }
+  .cb-title { text-align: center; font-size: 30px; font-weight: 700; color: #2c3e50; margin-bottom: 50px; }
 
-  /* Tabla de robots */
-  .cb-table-container { background: ${C.white}; border: 1px solid ${C.border}; border-radius: 2px; margin-bottom: 30px; overflow-x: auto; }
-  .cb-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 16px; }
-  .cb-table th { padding: 16px 20px; color: ${C.navy}; font-weight: 700; border-bottom: 1px solid ${C.border}; background: #f4f6fa; }
-  .cb-table td { padding: 14px 20px; border-bottom: 1px solid ${C.border}; color: ${C.text}; font-weight: 500; vertical-align: middle; }
-  .cb-table tr:last-child td { border-bottom: none; }
+  .cb-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 30px; }
+  .cb-card { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
+  
+  .cb-card-header { background: ${C.navy}; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; }
+  .cb-card-header h3 { font-size: 18px; font-weight: 600; }
 
-  /* Botones de acción */
-  .cb-action-cell { display: flex; gap: 10px; align-items: center; }
-  .cb-btn-access { background: ${C.access}; color: ${C.white}; border: 1px solid #155e91; padding: 6px 14px; border-radius: 4px; font-weight: 600; cursor: pointer; font-size: 13px; transition: background .15s; }
-  .cb-btn-access:hover { background: #155e91; }
-  .cb-btn-edit { background: ${C.edit}; color: ${C.white}; border: 1px solid #475569; padding: 6px 14px; border-radius: 4px; font-weight: 600; cursor: pointer; text-transform: uppercase; font-size: 13px; }
-  .cb-btn-delete { background: ${C.danger}; color: ${C.white}; border: 1px solid #b91c1c; padding: 6px 14px; border-radius: 4px; font-weight: 600; cursor: pointer; text-transform: uppercase; font-size: 13px; }
+  .cb-card-body { padding: 25px; display: flex; flex-direction: column; gap: 18px; }
 
-  /* Footer */
-  .cb-footer { background: transparent; color: ${C.navy}; display: flex; align-items: center; justify-content: space-between; padding: 14px 28px; font-size: 14px; margin-top: auto; border-top: 1px solid ${C.border}; }
-  .cb-footer-logo { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 20px; color: ${C.navy}; }
-  .cb-footer-logo span { color: ${C.yellow}; }
-  .cb-footer-icons { display: flex; gap: 14px; font-size: 20px; color: ${C.navy}; }
+  .cb-badge { padding: 6px 14px; border-radius: 20px; font-weight: 700; font-size: 11px; width: fit-content; display: flex; align-items: center; gap: 6px; }
+  .status-listo { background: #e6ffec; color: ${C.success}; }
+  .status-ruta { background: #fff9e6; color: ${C.warning}; }
+  .status-off { background: #ffe6e6; color: ${C.danger}; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+
+  .cb-info-row { display: flex; justify-content: space-between; font-size: 14px; color: #555; border-bottom: 1px solid #eee; padding-bottom: 8px; }
+  .cb-info-label { font-weight: 600; color: #333; }
+
+  .cb-btn-main { background: ${C.yellow}; color: ${C.navy}; border: none; padding: 12px; border-radius: 8px; font-weight: 700; cursor: pointer; text-transform: uppercase; width: 100%; transition: transform 0.1s; }
+  .cb-btn-main:active { transform: scale(0.98); }
+  .cb-btn-outline { background: white; border: 2px solid ${C.navy}; color: ${C.navy}; padding: 10px; border-radius: 8px; font-weight: 700; cursor: pointer; text-transform: uppercase; width: 100%; }
+
+  .cb-footer { background: ${C.navy}; padding: 30px 40px; margin-top: 50px; }
+  .cb-footer-content { display: flex; align-items: center; gap: 15px; color: #8892b0; font-size: 14px; }
+  .cb-footer-logo-img { height: 35px; width: auto; opacity: 0.7; }
 `
 
 export default function RobotList() {
   const navigate = useNavigate()
+  const [robots, setRobots] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [showPopup, setShowPopup] = useState(false)
 
   useEffect(() => {
     const styleEl = document.createElement('style')
     styleEl.textContent = GLOBAL_CSS
     document.head.appendChild(styleEl)
+    
+    // Conexión con el backend de FastAPI
+    fetch('http://localhost:8000/robots/')
+      .then(res => res.json())
+      .then(data => {
+        setRobots(data)
+        setLoading(false)
+      })
+      .catch((err) => {
+        console.error("Error al conectar con el servidor:", err)
+        setLoading(false)
+      })
+
     return () => document.head.removeChild(styleEl)
   }, [])
 
-  // Datos simulados idénticos a tu imagen
-  const [robots, setRobots] = useState([
-    { id: 1, nombre: 'Robot_1', robotId: '123456664' },
-    { id: 2, nombre: 'Robot 2', robotId: '543218887' },
-    { id: 3, nombre: 'Robot 3', robotId: '543218958' },
-  ])
+  const handleNav = (path) => navigate(path)
 
-  const handleCerrarSesion = () => {
-    if (onLogout) onLogout(); // Esto borra el usuario de la memoria (App.jsx)
-    navigate('/login');       // Esto te echa al login
+  const handleLogout = () => {
+    localStorage.clear()
+    sessionStorage.clear()
+    navigate('/login')
+    setTimeout(() => { window.location.href = '/login' }, 100)
   }
 
   return (
     <div className="cb-page">
-      <nav className="cb-navbar">
-        <div style={{ fontSize: 32, marginRight: 4 }}>🤖</div>
-        <span className="cb-logo-text">Carry<span>bot</span></span>
-
-        <div className="cb-nav-links">
-          <button className="cb-nav-btn active">Inicio</button>
-          <button className="cb-nav-btn">¡Conéctate!</button>
-          <button className="cb-nav-btn">Registro</button>
+      {/* MODAL DE ADVERTENCIA */}
+      {showPopup && (
+        <div className="cb-overlay" onClick={() => setShowPopup(false)}>
+          <div className="cb-modal" onClick={e => e.stopPropagation()}>
+            <h2 className="cb-modal-title">⚠️Unidad Fuera de Servicio⚠️</h2>
+            <p className="cb-modal-desc">
+              Este robot no está disponible actualmente. Verifique la conexión manual en el almacén o consulte el registro de incidencias.
+            </p>
+            <button className="cb-modal-btn" onClick={() => setShowPopup(false)}>
+              ENTENDIDO
+            </button>
+          </div>
         </div>
+      )}
 
-        <div className="cb-nav-spacer" />
-        
-        <button className="cb-nav-logout" onClick={handleCerrarSesion}>
-          CERRAR SESIÓN
-        </button>
+      {/* NAVEGACIÓN */}
+      <nav className="cb-navbar">
+        <div className="cb-logo" onClick={() => handleNav('/')}>
+          <div style={{ fontSize: 32, marginRight: 8 }}>🤖</div>
+          <span>Carry<span>bot</span></span>
+        </div>
+        <div className="cb-nav-links">
+          <button className="cb-nav-item active" onClick={() => handleNav('/')}>INICIO</button>
+          <button className="cb-nav-item" onClick={() => handleNav('/inventario')}>INVENTARIO</button>
+          <button className="cb-nav-item" onClick={() => handleNav('/contacto')}>INCIDENCIAS</button>
+        </div>
+        <div className="cb-nav-right">
+          <button className="cb-alert-btn" onClick={() => handleNav('/alertas')}>ALERTAS</button>
+          <button className="cb-logout-btn" onClick={handleLogout}>CERRAR SESIÓN</button>
+        </div>
       </nav>
 
-      <button className="cb-back" onClick={() => navigate(-1)}>
-        ‹ VOLVER
-      </button>
+      {/* CONTENIDO PRINCIPAL */}
+      <div className="cb-main">
+        <h1 className="cb-title">Flota de Robots Activos</h1>
+        
+        {loading ? (
+          <p style={{ textAlign: 'center', color: C.navy }}>Estableciendo conexión con la flota...</p>
+        ) : (
+          <div className="cb-grid">
+            {robots.map((robot) => (
+              <div key={robot.id} className="cb-card">
+                <div className="cb-card-header">
+                  <h3>{robot.codigo || `Carrybot-${robot.id.toString().padStart(2, '0')}`}</h3>
+                  <span style={{fontSize: '20px'}}>🤖</span>
+                </div>
+                
+                <div className="cb-card-body">
+                  {/* Etiqueta de estado dinámico */}
+                  <div className={`cb-badge ${
+                    robot.estado === 'activo' ? 'status-listo' : 
+                    robot.estado === 'en_tarea' ? 'status-ruta' : 'status-off'
+                  }`}>
+                    <div className="dot"></div>
+                    {robot.estado === 'activo' ? 'LISTO' : 
+                     robot.estado === 'en_tarea' ? 'EN RUTA' : 'OFF'}
+                  </div>
 
-      <div className="cb-main-wrap">
-        <div className="cb-table-container">
-          <table className="cb-table">
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Nombre</th>
-                <th>ID del Robot</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {robots.map((robot, index) => (
-                <tr key={robot.id}>
-                  {/* Replicamos el símbolo '^' de tu foto para los items siguientes */}
-                  <td>{index === 0 ? robot.id : '^'}</td>
-                  <td>{robot.nombre}</td>
-                  <td>{robot.robotId}</td>
-                  <td className="cb-action-cell">
-                    {/* El botón de acceso que redirige al control del robot */}
-                    <button 
-                      className="cb-btn-access" 
-                      onClick={() => navigate(`/robot/${robot.id}`)}
-                    >
-                      Acceso al Robot
+                  <div className="cb-info-row">
+                    <span className="cb-info-label">ID del Robot:</span>
+                    <span>{robot.id_etiqueta || robot.id}</span> 
+                  </div>
+
+                  <div className="cb-info-row">
+                    <span className="cb-info-label">Última ubicación:</span>
+                    <span>{robot.ubicacion || 'Almacén Central'}</span>
+                  </div>
+
+                  {/* Lógica de botones según disponibilidad */}
+                  {['activo', 'en_tarea'].includes(robot.estado) ? (
+                    <button className="cb-btn-main" onClick={() => handleNav(`/robot/${robot.id}`)}>
+                      PANEL DE CONTROL
                     </button>
-                    <button className="cb-btn-edit">EDITAR</button>
-                    <button 
-                      className="cb-btn-delete" 
-                      onClick={() => alert('¿Seguro que quieres eliminar este robot?')}
-                    >
-                      ELIMINAR
+                  ) : (
+                    <button className="cb-btn-outline" onClick={() => setShowPopup(true)}>
+                      REVISAR ESTADO
                     </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
+      {/* PIE DE PÁGINA */}
       <footer className="cb-footer">
-        <div>
-          <span className="cb-footer-logo">🤖 Carry<span>bot</span></span>
-          <span style={{ marginLeft: 8 }}>© Copyright Carrybot</span>
-        </div>
-        <div className="cb-footer-icons">
-          <span>🐦</span>
-          <span>📸</span>
-          <span>📘</span>
+        <div className="cb-footer-content">
+          <div className="cb-logo" style={{ fontSize: '20px', cursor: 'default' }}>
+            <div style={{ marginRight: 8 }}>🤖</div>
+            <span>Carry<span>bot</span></span>
+          </div>
+          <span>© Copyright Carrybot</span>
         </div>
       </footer>
     </div>
