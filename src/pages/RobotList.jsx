@@ -74,14 +74,14 @@ export default function RobotList() {
   const navigate = useNavigate()
   const [robots, setRobots] = useState([])
   const [loading, setLoading] = useState(true)
-
-  const logoPath = "/logo.png" 
+  const [showPopup, setShowPopup] = useState(false)
 
   useEffect(() => {
     const styleEl = document.createElement('style')
     styleEl.textContent = GLOBAL_CSS
     document.head.appendChild(styleEl)
     
+    // Conexión con el backend de FastAPI
     fetch('http://localhost:8000/robots/')
       .then(res => res.json())
       .then(data => {
@@ -89,62 +89,62 @@ export default function RobotList() {
         setLoading(false)
       })
       .catch((err) => {
-        console.error("Error al cargar robots:", err)
+        console.error("Error al conectar con el servidor:", err)
         setLoading(false)
       })
 
     return () => document.head.removeChild(styleEl)
   }, [])
 
-  // Función de navegación general
-  const handleNav = (path) => {
-    console.log("Navegando a:", path)
-    navigate(path)
-  }
+  const handleNav = (path) => navigate(path)
 
-  
-  // FUNCIÓN DE CIERRE DE SESIÓN REFORZADA
   const handleLogout = () => {
-    console.log("Cerrando sesión de forma agresiva...")
-    
-    // 1. Borramos TODO de la memoria local para no dejar rastro
-    localStorage.clear();
-    sessionStorage.clear();
-    
-    // 2. Intentamos navegar al login con React Router
-    navigate('/login');
-    
-    // 3. Fallback de seguridad: Si navigate no funciona, forzamos recarga de página al login
-    setTimeout(() => {
-      window.location.href = '/login';
-    }, 100);
+    localStorage.clear()
+    sessionStorage.clear()
+    navigate('/login')
+    setTimeout(() => { window.location.href = '/login' }, 100)
   }
 
   return (
     <div className="cb-page">
+      {/* MODAL DE ADVERTENCIA */}
+      {showPopup && (
+        <div className="cb-overlay" onClick={() => setShowPopup(false)}>
+          <div className="cb-modal" onClick={e => e.stopPropagation()}>
+            <h2 className="cb-modal-title">⚠️Unidad Fuera de Servicio⚠️</h2>
+            <p className="cb-modal-desc">
+              Este robot no está disponible actualmente. Verifique la conexión manual en el almacén o consulte el registro de incidencias.
+            </p>
+            <button className="cb-modal-btn" onClick={() => setShowPopup(false)}>
+              ENTENDIDO
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* NAVEGACIÓN */}
       <nav className="cb-navbar">
         <div className="cb-logo" onClick={() => handleNav('/')}>
           <div style={{ fontSize: 32, marginRight: 8 }}>🤖</div>
           <span>Carry<span>bot</span></span>
         </div>
-        
         <div className="cb-nav-links">
           <button className="cb-nav-item active" onClick={() => handleNav('/')}>INICIO</button>
           <button className="cb-nav-item" onClick={() => handleNav('/inventario')}>INVENTARIO</button>
           <button className="cb-nav-item" onClick={() => handleNav('/contacto')}>INCIDENCIAS</button>
         </div>
-
         <div className="cb-nav-right">
           <button className="cb-alert-btn" onClick={() => handleNav('/alertas')}>ALERTAS</button>
           <button className="cb-logout-btn" onClick={handleLogout}>CERRAR SESIÓN</button>
         </div>
       </nav>
 
+      {/* CONTENIDO PRINCIPAL */}
       <div className="cb-main">
         <h1 className="cb-title">Flota de Robots Activos</h1>
         
         {loading ? (
-          <p style={{ textAlign: 'center' }}>Conectando con la base de datos de CarryBot...</p>
+          <p style={{ textAlign: 'center', color: C.navy }}>Estableciendo conexión con la flota...</p>
         ) : (
           <div className="cb-grid">
             {robots.map((robot) => (
@@ -155,13 +155,14 @@ export default function RobotList() {
                 </div>
                 
                 <div className="cb-card-body">
+                  {/* Etiqueta de estado dinámico */}
                   <div className={`cb-badge ${
                     robot.estado === 'activo' ? 'status-listo' : 
                     robot.estado === 'en_tarea' ? 'status-ruta' : 'status-off'
                   }`}>
                     <div className="dot"></div>
-                    {robot.estado === 'activo' ? '● LISTO' : 
-                     robot.estado === 'en_tarea' ? '● EN RUTA' : '● DESCONECTADO'}
+                    {robot.estado === 'activo' ? 'LISTO' : 
+                     robot.estado === 'en_tarea' ? 'EN RUTA' : 'OFF'}
                   </div>
 
                   <div className="cb-info-row">
@@ -174,13 +175,14 @@ export default function RobotList() {
                     <span>{robot.ubicacion || 'Almacén Central'}</span>
                   </div>
 
-                  {robot.estado === 'error' || robot.estado === 'desconectado' ? (
-                    <button className="cb-btn-outline" onClick={() => handleNav('/incidencias')}>
-                      VER REGISTRO
-                    </button>
-                  ) : (
+                  {/* Lógica de botones según disponibilidad */}
+                  {['activo', 'en_tarea'].includes(robot.estado) ? (
                     <button className="cb-btn-main" onClick={() => handleNav(`/robot/${robot.id}`)}>
                       PANEL DE CONTROL
+                    </button>
+                  ) : (
+                    <button className="cb-btn-outline" onClick={() => setShowPopup(true)}>
+                      REVISAR ESTADO
                     </button>
                   )}
                 </div>
@@ -190,9 +192,10 @@ export default function RobotList() {
         )}
       </div>
 
+      {/* PIE DE PÁGINA */}
       <footer className="cb-footer">
         <div className="cb-footer-content">
-          <div className="cb-logo" style={{ fontSize: '20px' }}>
+          <div className="cb-logo" style={{ fontSize: '20px', cursor: 'default' }}>
             <div style={{ marginRight: 8 }}>🤖</div>
             <span>Carry<span>bot</span></span>
           </div>
