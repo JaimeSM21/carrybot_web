@@ -31,8 +31,6 @@ const GLOBAL_CSS = `
   .cb-nav-btn { background: transparent; border: 1px solid transparent; cursor: pointer; font-family: 'Barlow', sans-serif; font-size: 14px; font-weight: 600; color: ${C.white}; padding: 8px 16px; border-radius: 4px; text-transform: uppercase; transition: all .15s; }
   .cb-nav-btn:hover { border-color: ${C.white}; }
   
-  /* Ya no hay clase .active en amarillo por defecto */
-  
   .cb-nav-spacer { flex: 1; }
   .cb-nav-logout { background: ${C.yellow}; color: ${C.navy}; border: none; border-radius: 4px; cursor: pointer; font-family: 'Barlow', sans-serif; font-size: 13px; font-weight: 700; padding: 8px 18px; text-transform: uppercase; transition: all .15s; }
 
@@ -64,7 +62,10 @@ const GLOBAL_CSS = `
 
 export default function RobotList() {
   const navigate = useNavigate()
+  const [robots, setRobots] = useState([])
+  const [loading, setLoading] = useState(true)
 
+  // Inyectar Estilos Globales
   useEffect(() => {
     const styleEl = document.createElement('style')
     styleEl.textContent = GLOBAL_CSS
@@ -72,11 +73,20 @@ export default function RobotList() {
     return () => document.head.removeChild(styleEl)
   }, [])
 
-  const [robots] = useState([
-    { id: 1, nombre: 'Carrybot-01', robotId: '123456664', estado: 'LISTO', ubicacion: 'Almacén Central' },
-    { id: 2, nombre: 'Carrybot-02', robotId: '543218887', estado: 'EN RUTA', ubicacion: 'Almacén Central' },
-    { id: 3, nombre: 'Carrybot-03', robotId: '543218958', estado: 'DESCONECTADO', ubicacion: 'Almacén Central' },
-  ])
+  // Obtener datos reales del Backend (Puerto 8000)
+  useEffect(() => {
+    fetch('http://localhost:8000/robots/')
+      .then(res => res.json())
+      .then(data => {
+        console.log("Datos recibidos del backend:", data)
+        setRobots(data)
+        setLoading(false)
+      })
+      .catch(err => {
+        console.error("Error conectando con la API:", err)
+        setLoading(false)
+      })
+  }, [])
 
   return (
     <div className="cb-page">
@@ -99,47 +109,58 @@ export default function RobotList() {
       <div className="cb-main-wrap">
         <h1 className="cb-title">Flota de Robots Activos</h1>
         
-        <div className="cb-grid">
-          {robots.map((robot) => (
-            <div key={robot.id} className="cb-card">
-              <div className="cb-card-header">
-                <h3>{robot.nombre}</h3>
-                <div style={{fontSize: 20}}>🤖</div>
+        {loading ? (
+          <div style={{ textAlign: 'center', padding: '50px', color: C.navy }}>
+            Cargando datos de la flota...
+          </div>
+        ) : (
+          <div className="cb-grid">
+            {robots.map((robot) => (
+              <div key={robot.id} className="cb-card">
+                <div className="cb-card-header">
+                  {/* Usamos 'codigo' (CB-01, CB-02...) que es lo que devuelve el backend */}
+                  <h3>{robot.codigo || "Sin Código"}</h3> 
+                  <span>🤖</span>
+                </div>
+                <div className="cb-card-body">
+                  {/* Lógica de estados corregida: activo o en_tarea muestran su estado, lo demás es OFF */}
+                  <div className={`cb-badge ${
+                    robot.estado === 'activo' ? 'status-listo' : 
+                    robot.estado === 'en_tarea' ? 'status-ruta' : 'status-off'
+                  }`}>
+                    <div className="dot"></div>
+                    {robot.estado === 'activo' ? 'LISTO' : 
+                     robot.estado === 'en_tarea' ? 'EN RUTA' : 'OFF'}
+                  </div>
+
+                  <div className="cb-info-row">
+                    <span className="cb-info-label">ID del Robot:</span> 
+                    <span>{robot.id}</span>
+                  </div>
+                  
+                  <div className="cb-info-row">
+                    <span className="cb-info-label">Modelo:</span> 
+                    <span>{robot.modelo || "Carrybot v1"}</span>
+                  </div>
+
+                  {/* La información de la batería se ha ocultado temporalmente */}
+
+                  {robot.estado === 'error' || robot.estado === 'desconectado' ? (
+                    <button className="cb-btn-outline">VER REGISTRO</button>
+                  ) : (
+                    <button className="cb-btn-main" onClick={() => navigate(`/robot/${robot.id}`)}>
+                      PANEL DE CONTROL
+                    </button>
+                  )}
+                </div>
               </div>
-              
-              <div className="cb-card-body">
-                <div className={`cb-badge ${
-                  robot.estado === 'LISTO' ? 'status-listo' : 
-                  robot.estado === 'EN RUTA' ? 'status-ruta' : 'status-off'
-                }`}>
-                  <div className="dot"></div>
-                  {robot.estado}
-                </div>
+            ))}
+          </div>
+        )}
 
-                <div className="cb-info-row">
-                  <span className="cb-info-label">ID del Robot:</span>
-                  <span>{robot.robotId}</span>
-                </div>
-
-                <div className="cb-info-row">
-                  <span className="cb-info-label">Última ubicación:</span>
-                  <span>{robot.ubicacion}</span>
-                </div>
-
-                {robot.estado === 'DESCONECTADO' ? (
-                  <button className="cb-btn-outline" onClick={() => alert('Viendo registros...')}>VER REGISTRO</button>
-                ) : (
-                  <button 
-                    className="cb-btn-main"
-                    onClick={() => navigate(`/robot/${robot.id}`)}
-                  >
-                    PANEL DE CONTROL
-                  </button>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
+        {!loading && robots.length === 0 && (
+          <div style={{ textAlign: 'center', color: C.text }}>No hay robots registrados en el sistema.</div>
+        )}
       </div>
 
       <footer className="cb-footer">
@@ -147,7 +168,7 @@ export default function RobotList() {
           <span className="cb-footer-logo">🤖 Carry<span>bot</span></span>
           <span style={{ marginLeft: 8 }}>© Copyright Carrybot</span>
         </div>
-        <div className="cb-footer-icons">
+        <div className="cb-footer-icons" style={{ display: 'flex', gap: '15px', fontSize: '20px' }}>
           <span>🐦</span> <span>📸</span> <span>📘</span>
         </div>
       </footer>
