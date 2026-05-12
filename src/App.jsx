@@ -6,6 +6,7 @@ import GestionRobot from './pages/GestionRobot'
 import ProtectedRoute from './components/ProtectedRoute'
 import LandingPage   from './pages/LandingPage'
 import UserManagement from './pages/UserManagement'
+import Inventario from './pages/Inventario'
 import { getSessionUser, logoutSession, seedDemoUser } from './utils/auth'
 import FormularioIncidencias from './pages/FormularioIncidencias'
 import RobotList from './pages/RobotList'
@@ -45,6 +46,14 @@ function App() {
           element={
             <ProtectedRoute isAuthenticated={!!user}>
               <RobotList user={user} onLogout={handleLogout} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/inventario"
+          element={
+            <ProtectedRoute isAuthenticated={!!user}>
+              <Inventario user={user} onLogout={handleLogout} />
             </ProtectedRoute>
           }
         />
