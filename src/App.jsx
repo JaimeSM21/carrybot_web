@@ -10,6 +10,7 @@ import { getSessionUser, logoutSession, seedDemoUser } from './utils/auth'
 import FormularioIncidencias from './pages/FormularioIncidencias'
 import RobotList from './pages/RobotList'
 import RegistroIncidencias from './pages/RegistroIncidencias'
+import RegistroAlertas from './pages/RegistroAlertas'
  
 function App() {
   const [user, setUser] = useState(() => getSessionUser())
@@ -67,10 +68,15 @@ function App() {
 
         <Route path="/contacto" element={<FormularioIncidencias />} />
         
-        <Route path="*" element={<Navigate to={user ? '/home' : '/login'} replace />} />
+        <Route
+          path="/alertas"
+          element={<RegistroAlertas user={user} onLogout={handleLogout} />}
+        />
         <Route path="/robot"  element={<GestionRobot />} />
 
         <Route path="/incidencias" element={<RegistroIncidencias />} />
+
+        <Route path="*" element={<Navigate to={user ? '/home' : '/login'} replace />} />
 
       </Routes>
       
