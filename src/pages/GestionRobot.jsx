@@ -292,7 +292,8 @@ const GLOBAL_CSS = `
 export default function GestionRobot({ user, onLogout }) {
   const navigate    = useNavigate();
   const roslibLoaded = useRoslib();
-
+  // ID del robot en la BD — debe coincidir con el INSERT del paso 1.1
+  const ROBOT_ID = 1;
   const [address,      setAddress]      = useState("ws://127.0.0.1:9090/");
   const [connected,    setConnected]    = useState(false);
   const [position,     setPosition]     = useState({ x: 0, y: 0 });
@@ -313,6 +314,8 @@ export default function GestionRobot({ user, onLogout }) {
   const announcRef   = useRef(null);
   const mapCanvasRef = useRef(null);
   const positionRef  = useRef({ x: 0, y: 0 });
+  const [robotDB,      setRobotDB]      = useState(null);   // datos del robot en BD
+  const [tareaActual,  setTareaActual]  = useState(null);   // id de la tarea en curso
 
   // ── Inyectar estilos ──────────────────────────────────────────────────────
   useEffect(() => {
@@ -321,6 +324,32 @@ export default function GestionRobot({ user, onLogout }) {
     document.head.appendChild(el);
     return () => document.head.removeChild(el);
   }, []);
+
+  // Cargar datos del robot desde la BD al montar la pantalla
+    useEffect(() => {
+      fetch(`http://localhost:8000/robots/${ROBOT_ID}`)
+        .then(res => res.json())
+        .then(data => setRobotDB(data))
+        .catch(() => console.warn('[CarryBot] No se pudo cargar el robot de la BD'));
+    }, []);
+
+    useEffect(() => {
+      if (!connected) return;
+
+      const interval = setInterval(() => {
+        fetch(`http://localhost:8000/robots/${ROBOT_ID}/pos_x/pos_y/pos_z`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            x: positionRef.current.x,
+            y: positionRef.current.y,
+            z: 0.0,
+          }),
+        }).catch(() => {});   // fallo silencioso: no interrumpe la UI
+      }, 5000);
+
+      return () => clearInterval(interval);
+    }, [connected]);
 
   // ── Conectar / desconectar ────────────────────────────────────────────────
   const connect = useCallback(() => {
@@ -392,6 +421,33 @@ export default function GestionRobot({ user, onLogout }) {
         try {
           const parsed = JSON.parse(msg.data);
           setDetection(parsed);
+          // Si hay QR con destino válido y no hay ya una tarea activa, crearla
+          const DESTINOS_COORDS = {
+            Estanteria1:  { x: 6.917, y: 2.282 },
+            Estanteria2:  { x: 8.808, y: 2.295 },
+            PuntoDeCarga: { x: 4.663, y: 1.682 },
+          };
+
+          if (parsed.qr_detected && parsed.qr_parsed?.dest && !tareaActual) {
+            const dest = parsed.qr_parsed.dest;
+            const coords = DESTINOS_COORDS[dest];
+            if (coords) {
+              fetch('http://localhost:8000/tareas/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  id_robot:        ROBOT_ID,
+                  destino_nombre:  dest,
+                  destino_x:       coords.x,
+                  destino_y:       coords.y,
+                  qr_data:         parsed.qr_data,
+                }),
+              })
+                .then(res => res.json())
+                .then(data => setTareaActual(data.id))
+                .catch(() => {});
+            }
+          }
         } catch {
           console.warn('[CarryBot] Error parseando /package/detection:', msg.data);
         }
@@ -813,7 +869,21 @@ export default function GestionRobot({ user, onLogout }) {
                       <button
                         className="cb-control-btn active"
                         style={{ marginTop: 12, background: C.yellow, color: C.navy, borderColor: C.yellow }}
-                        onClick={() => publishCommand('/web/nav_goal', detection.qr_parsed.dest)}
+                        onClick={() => {
+                                publishCommand('/web/nav_goal', detection.qr_parsed.dest);
+
+                                // Marcar tarea como en_curso
+                                if (tareaActual) {
+                                  fetch(`http://localhost:8000/tareas/${tareaActual}/estado?estado=en_curso`, {
+                                    method: 'PUT',
+                                  }).catch(() => {});
+
+                                  // Marcar robot como en_tarea
+                                  fetch(`http://localhost:8000/robots/${ROBOT_ID}/estado?estado=en_tarea`, {
+                                    method: 'PUT',
+                                  }).catch(() => {});
+                                }
+                              }}
                       >
                         🚀 Ir a {detection.qr_parsed.dest}
                       </button>
@@ -871,7 +941,22 @@ export default function GestionRobot({ user, onLogout }) {
                 cursor: 'pointer', letterSpacing: '1px',
                 textTransform: 'uppercase',
               }}
-              onClick={() => publishCommand('/web/cancel', 'stop')}
+              onClick={() => {
+                            publishCommand('/web/cancel', 'stop');
+
+                            // Cancelar tarea activa en BD
+                            if (tareaActual) {
+                              fetch(`http://localhost:8000/tareas/${tareaActual}/estado?estado=cancelada`, {
+                                method: 'PUT',
+                              }).catch(() => {});
+                              setTareaActual(null);
+
+                              // Robot vuelve a activo
+                              fetch(`http://localhost:8000/robots/${ROBOT_ID}/estado?estado=activo`, {
+                                method: 'PUT',
+                              }).catch(() => {});
+                            }
+                          }}
             >
               STOP — Cancelar acción
             </button>
