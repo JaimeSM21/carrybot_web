@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import Navbar from '../components/Navbar'
 
 const CSS = `
 .alertas-page {
@@ -7,68 +8,7 @@ const CSS = `
   background: #eef1f7;
   display: flex;
   flex-direction: column;
-  font-family: Arial, sans-serif;
-}
-
-.alertas-header {
-  height: 70px;
-  background: #1c3263;
-  display: flex;
-  align-items: center;
-  padding: 0 28px;
-  gap: 45px;
-}
-
-.alertas-logo {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  color: white;
-  font-size: 28px;
-  font-weight: 800;
-}
-
-.alertas-logo-icon {
-  font-size: 42px;
-}
-
-.alertas-nav {
-  display: flex;
-  gap: 38px;
-}
-
-.alertas-nav button {
-  background: none;
-  border: none;
-  color: white;
-  font-weight: 800;
-  font-size: 18px;
-  cursor: pointer;
-}
-
-.alertas-spacer {
-  flex: 1;
-}
-
-.alertas-btn-active {
-  background: #f5c518;
-  color: #1c3263;
-  border: none;
-  border-radius: 13px;
-  padding: 13px 35px;
-  font-weight: 800;
-  font-size: 17px;
-}
-
-.alertas-logout {
-  background: transparent;
-  color: white;
-  border: 1px solid white;
-  border-radius: 13px;
-  padding: 12px 18px;
-  font-weight: 800;
-  font-size: 17px;
-  cursor: pointer;
+  font-family: 'Barlow', sans-serif;
 }
 
 .alertas-main {
@@ -86,16 +26,17 @@ const CSS = `
 .alertas-back {
   background: white;
   border: 1px solid #ddd;
-  color: #666;
+  color: #1a2d5a;
   font-weight: 800;
   padding: 12px 20px;
   border-radius: 9px;
   font-size: 16px;
   cursor: pointer;
+  text-transform: uppercase;
 }
 
 .alertas-report {
-  background: #1c3263;
+  background: #1a2d5a;
   color: white;
   border: none;
   border-radius: 13px;
@@ -103,11 +44,11 @@ const CSS = `
   font-weight: 800;
   font-size: 17px;
   cursor: pointer;
+  text-transform: uppercase;
 }
 
 .alertas-card {
   max-width: 1200px;
-  min-height: 430px;
   margin: 0 auto;
   background: white;
   border: 1px solid #d7dbe5;
@@ -117,7 +58,7 @@ const CSS = `
 }
 
 .alertas-title {
-  background: #1c3263;
+  background: #1a2d5a;
   color: white;
   text-align: center;
   font-weight: 800;
@@ -136,88 +77,58 @@ const CSS = `
 
 .alertas-table th {
   text-align: left;
-  font-size: 20px;
-  color: #333;
+  font-size: 18px;
+  color: #1a2d5a;
   padding-bottom: 22px;
 }
 
 .alertas-table td {
-  padding: 9px 0;
+  padding: 12px 0;
   color: #333;
   font-weight: 700;
   font-size: 16px;
-}
-
-.alertas-table th:last-child,
-.alertas-table td:last-child {
-  text-align: center;
+  border-bottom: 1px solid #eee;
 }
 
 .alertas-select {
-  border: 1px solid #aaa;
-  border-radius: 18px;
+  border: 1.5px solid #aaa;
+  border-radius: 8px;
   padding: 5px 14px;
   background: white;
   font-size: 16px;
+  font-weight: 700;
 }
 
-.alertas-footer {
-  height: 82px;
-  background: #1c3263;
-  display: flex;
-  align-items: center;
-  padding: 0 30px;
+/* --- CSS DEL FOOTER AÑADIDO AQUÍ --- */
+.cb-footer {
+  background: #1a2d5a;
   color: white;
-}
-
-.alertas-footer-logo {
+  padding: 20px 28px;
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 13px;
+  font-size: 14px;
+  margin-top: auto; /* Esto empuja el footer al final */
 }
 
-.alertas-footer-title {
-  font-size: 26px;
+.cb-footer-logo {
+  font-family: 'Barlow Condensed', sans-serif;
   font-weight: 800;
+  font-size: 24px;
 }
 
-.alertas-footer-copy {
-  color: rgba(255,255,255,0.65);
-  font-size: 16px;
+.cb-footer-logo span {
+  color: #f5c518;
+}
+
+.cb-footer-icons {
+  display: flex;
+  gap: 15px;
+  font-size: 20px;
 }
 `
 
-const datosPrueba = [
-  {
-    id: 1,
-    fecha: '15 febrero 2025',
-    hora: '13:56',
-    robot_codigo: '15895596',
-    trabajador: 'Sandra Moll',
-    descripcion: 'Robot no encuentra zona 1',
-    estado: 'Pendiente',
-  },
-  {
-    id: 2,
-    fecha: '15 febrero 2025',
-    hora: '10:15',
-    robot_codigo: '84848515',
-    trabajador: 'Rocio Piquer',
-    descripcion: 'Robot se ha saltado paquete',
-    estado: 'Pendiente',
-  },
-  {
-    id: 3,
-    fecha: '14 febrero 2025',
-    hora: '18:36',
-    robot_codigo: '15895596',
-    trabajador: 'Sandra Moll',
-    descripcion: 'Robot atascado',
-    estado: 'Resuelta',
-  },
-]
-
-export default function RegistroAlertas({ onLogout }) {
+export default function RegistroAlertas({ user, onLogout }) {
   const navigate = useNavigate()
   const [alertas, setAlertas] = useState([])
 
@@ -231,14 +142,8 @@ export default function RegistroAlertas({ onLogout }) {
   useEffect(() => {
     fetch('http://localhost:8000/alertas/')
       .then(res => res.json())
-      .then(data => {
-        if (Array.isArray(data) && data.length > 0) {
-          setAlertas(data)
-        } else {
-          setAlertas(datosPrueba)
-        }
-      })
-      .catch(() => setAlertas(datosPrueba))
+      .then(data => setAlertas(data))
+      .catch(() => {})
   }, [])
 
   const cambiarEstado = (id, nuevoEstado) => {
@@ -247,7 +152,6 @@ export default function RegistroAlertas({ onLogout }) {
         alerta.id === id ? { ...alerta, estado: nuevoEstado } : alerta
       )
     )
-
     fetch(`http://localhost:8000/alertas/${id}/estado`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
@@ -257,31 +161,15 @@ export default function RegistroAlertas({ onLogout }) {
 
   return (
     <div className="alertas-page">
-      <header className="alertas-header">
-        <div className="alertas-logo">
-          <span className="alertas-logo-icon">🤖</span>
-          <span>Carrybot</span>
-        </div>
-
-        <nav className="alertas-nav">
-          <button onClick={() => navigate('/home')}>INICIO</button>
-          <button>INVENTARIO</button>
-          <button onClick={() => navigate('/incidencias')}>INCIDENCIAS</button>
-        </nav>
-
-        <div className="alertas-spacer" />
-
-        <button className="alertas-btn-active">ALERTAS</button>
-
-        <button className="alertas-logout" onClick={onLogout}>
-          CERRAR SESIÓN
-        </button>
-      </header>
+      {/* IMPORTANTE: Verifica que en App.jsx estés pasando onLogout={handleLogout}.
+        Si no se lo pasas en App.jsx, el botón no hará nada.
+      */}
+      <Navbar variant="trabajador" user={user} onLogout={onLogout} />
 
       <main className="alertas-main">
         <div className="alertas-top">
           <button className="alertas-back" onClick={() => navigate(-1)}>
-            &lt; VOLVER
+            ‹ VOLVER
           </button>
 
           <button className="alertas-report" onClick={() => navigate('/contacto')}>
@@ -332,13 +220,13 @@ export default function RegistroAlertas({ onLogout }) {
         </section>
       </main>
 
-      <footer className="alertas-footer">
-        <div className="alertas-footer-logo">
-          <span className="alertas-logo-icon">🤖</span>
-          <div>
-            <div className="alertas-footer-title">Carrybot</div>
-            <div className="alertas-footer-copy">© Copyright Carrybot</div>
-          </div>
+      <footer className="cb-footer">
+        <div className="cb-footer-logo-wrap">
+          <div className="cb-footer-logo">Carry<span>bot</span></div>
+          <div style={{ opacity: 0.7 }}>© Copyright Carrybot</div>
+        </div>
+        <div className="cb-footer-icons">
+          <span>🐦</span> <span>📸</span> <span>📘</span>
         </div>
       </footer>
     </div>

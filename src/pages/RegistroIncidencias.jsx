@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import Navbar from '../components/Navbar' // Importación del menú unificado
 
 const C = {
   navy: '#1a2d5a',
@@ -13,14 +14,9 @@ const C = {
 const GLOBAL_CSS = `
   body { font-family: 'Barlow', sans-serif; background: #f0f2f7; }
   .cb-page { min-height: 100vh; display: flex; flex-direction: column; }
-  .cb-navbar { background: ${C.navy}; display: flex; align-items: center; gap: 12px; padding: 0 28px; height: 64px; }
-  .cb-logo-text { font-size: 26px; font-weight: 700; color: white; }
-  .cb-logo-text span { color: ${C.yellow}; }
-  .cb-nav-links { display: flex; gap: 4px; margin-left: 20px; }
-  .cb-nav-btn { background: transparent; border: none; cursor: pointer; font-size: 14px; font-weight: 600; color: white; padding: 8px 16px; border-radius: 6px; text-transform: uppercase; }
-  .cb-nav-btn.active { background: ${C.yellow}; color: ${C.navy}; }
-  .cb-nav-spacer { flex: 1; }
-  .cb-nav-session { background: transparent; border: 1.5px solid rgba(255,255,255,.4); border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; color: white; padding: 7px 18px; text-transform: uppercase; }
+  
+  /* Se han eliminado .cb-navbar y sus estilos hijos porque ya están en index.css */
+
   .cb-back { margin: 20px 28px 8px; color: ${C.navy}; font-size: 14px; font-weight: 700; background: white; border: 1.5px solid ${C.border}; border-radius: 10px; padding: 10px 18px; cursor: pointer; text-transform: uppercase; width: fit-content; }
   .cb-main { flex: 1; display: flex; justify-content: center; align-items: flex-start; gap: 45px; padding: 20px 28px 50px; }
   .inc-card { width: 560px; background: white; border: 1.5px solid ${C.border}; border-radius: 8px; overflow: hidden; }
@@ -37,12 +33,14 @@ const GLOBAL_CSS = `
   .detail-body p { margin-bottom: 14px; }
   .close-btn { display: block; margin: 10px auto 0; background: ${C.yellow}; color: ${C.navy}; border: none; border-radius: 8px; padding: 8px 30px; font-weight: 700; cursor: pointer; }
   .empty { padding: 30px; text-align: center; color: ${C.muted}; }
+
+  /* Footer local para RegistroIncidencias si no se usa el global */
   .cb-footer { background: ${C.navy}; color: rgba(255,255,255,.7); display: flex; justify-content: space-between; padding: 14px 28px; font-size: 13px; margin-top: auto; }
   .cb-footer-logo { font-weight: 700; font-size: 18px; color: white; }
   .cb-footer-logo span { color: ${C.yellow}; }
 `
 
-export default function RegistroIncidencias() {
+export default function RegistroIncidencias({ user, onLogout }) {
   const navigate = useNavigate()
   const [incidencias, setIncidencias] = useState([])
   const [seleccionada, setSeleccionada] = useState(null)
@@ -77,21 +75,8 @@ export default function RegistroIncidencias() {
 
   return (
     <div className="cb-page">
-      <nav className="cb-navbar">
-        <div style={{ fontSize: 32 }}>🤖</div>
-        <span className="cb-logo-text">Carry<span>bot</span></span>
-
-        <div className="cb-nav-links">
-          <button className="cb-nav-btn" onClick={() => navigate('/home')}>Robots</button>
-          <button className="cb-nav-btn active">Incidencias</button>
-        </div>
-
-        <div className="cb-nav-spacer" />
-
-        <button className="cb-nav-session" onClick={() => navigate('/login')}>
-          Cerrar sesión
-        </button>
-      </nav>
+      {/* MENÚ ADMINISTRADOR UNIFICADO */}
+      <Navbar variant="admin" user={user} onLogout={onLogout} />
 
       <button className="cb-back" onClick={() => navigate(-1)}>
         ‹ Volver
