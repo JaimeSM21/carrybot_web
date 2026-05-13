@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { registerUser } from '../utils/auth'
+import Navbar from '../components/Navbar' // Importación del nuevo menú unificado
 
 const C = {
   navy: '#1a2d5a',
@@ -27,64 +28,7 @@ const GLOBAL_CSS = `
     flex-direction: column;
   }
 
-  .cb-navbar {
-    background: ${C.navy};
-    display: flex; align-items: center; gap: 12px;
-    padding: 0 28px; height: 64px;
-    box-shadow: 0 2px 12px rgba(26,45,90,.18);
-  }
-
-  .cb-logo-text {
-    font-family: 'Barlow Condensed', sans-serif;
-    font-size: 26px;
-    font-weight: 700;
-    color: ${C.white};
-    letter-spacing: -0.5px;
-  }
-
-  .cb-logo-text span { color: ${C.yellow}; }
-
-  .cb-nav-links { display: flex; gap: 4px; margin-left: 20px; }
-
-  .cb-nav-btn {
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    font-family: 'Barlow', sans-serif;
-    font-size: 14px;
-    font-weight: 600;
-    color: ${C.white};
-    padding: 8px 16px;
-    border-radius: 6px;
-    text-transform: uppercase;
-    letter-spacing: .5px;
-    transition: background .15s;
-  }
-
-  .cb-nav-btn:hover { background: rgba(255,255,255,.12); }
-  .cb-nav-btn.active { background: ${C.yellow}; color: ${C.navy}; }
-
-  .cb-nav-spacer { flex: 1; }
-
-  .cb-nav-session {
-    background: transparent;
-    border: 1.5px solid rgba(255,255,255,.4);
-    border-radius: 6px;
-    cursor: pointer;
-    font-family: 'Barlow', sans-serif;
-    font-size: 13px;
-    font-weight: 600;
-    color: ${C.white};
-    padding: 7px 18px;
-    letter-spacing: .4px;
-    text-transform: uppercase;
-    transition: all .15s;
-  }
-
-  .cb-nav-session:hover {
-    background: rgba(255,255,255,.1);
-    border-color: ${C.white};
-  }
+  /* Se han eliminado los estilos manuales de .cb-navbar, .cb-logo y .cb-nav-btn */
 
   .cb-back {
     display: inline-flex;
@@ -227,10 +171,6 @@ const GLOBAL_CSS = `
     margin-bottom: 4px;
   }
 
-  .cb-password-row:last-child {
-    margin-bottom: 0;
-  }
-
   .cb-auth-switch {
     text-align: center;
     font-size: 16px;
@@ -248,7 +188,7 @@ const GLOBAL_CSS = `
 
   .cb-footer {
     background: ${C.navy};
-    color: rgba(255,255,255,.7);
+    color: white;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -261,39 +201,22 @@ const GLOBAL_CSS = `
     font-family: 'Barlow Condensed', sans-serif;
     font-weight: 700;
     font-size: 18px;
-    color: ${C.white};
+    color: white;
   }
 
   .cb-footer-logo span { color: ${C.yellow}; }
   .cb-footer-icons { display: flex; gap: 14px; font-size: 18px; }
 
   @media (max-width: 768px) {
-    .cb-navbar {
-      flex-wrap: wrap;
-      height: auto;
-      padding: 16px 20px;
-    }
-
-    .cb-nav-links {
-      order: 3;
-      width: 100%;
-      margin-left: 0;
-      margin-top: 8px;
-      flex-wrap: wrap;
-    }
-
     .cb-auth-wrap {
       padding: 12px 16px 32px;
     }
-
     .cb-card-header {
       font-size: 22px;
     }
-
     .cb-card-body {
       padding: 20px;
     }
-
     .cb-conn-input {
       font-size: 16px;
     }
@@ -386,22 +309,8 @@ export default function Register({ onLogin }) {
 
   return (
     <div className="cb-page">
-      <nav className="cb-navbar">
-        <div style={{ fontSize: 32, marginRight: 4 }}>🤖</div>
-        <span className="cb-logo-text">Carry<span>bot</span></span>
-
-        <div className="cb-nav-links">
-          <button className="cb-nav-btn active">Inicio</button>
-          <button className="cb-nav-btn" onClick={() => navigate('/login')}>¡Conéctate!</button>
-          <button className="cb-nav-btn active">Registro</button>
-        </div>
-
-        <div className="cb-nav-spacer" />
-
-        <button className="cb-nav-session" onClick={() => navigate('/login')}>
-          Contáctanos
-        </button>
-      </nav>
+      {/* MENÚ PÚBLICO UNIFICADO */}
+      <Navbar variant="publico" />
 
       <button className="cb-back" onClick={() => navigate('/login')}>
         ‹ Volver

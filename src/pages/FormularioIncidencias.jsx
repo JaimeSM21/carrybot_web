@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import Navbar from '../components/Navbar' // Importamos el nuevo menú
 
 const C = {
   navy: '#1a2d5a',
@@ -14,6 +15,7 @@ const C = {
   cardBg: '#ffffff',
 }
 
+// Eliminamos todo lo referente a .cb-navbar y .cb-footer que ya está en index.css
 const GLOBAL_CSS = `
   @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap');
 
@@ -21,20 +23,6 @@ const GLOBAL_CSS = `
   body { font-family: 'Barlow', sans-serif; background: #f0f2f7; }
 
   .cb-page { min-height: 100vh; display: flex; flex-direction: column; }
-
-  .cb-navbar { background: ${C.navy}; display: flex; align-items: center; gap: 12px; padding: 0 28px; height: 64px; box-shadow: 0 2px 12px rgba(26,45,90,.18); }
-  .cb-logo-text { font-family: 'Barlow Condensed', sans-serif; font-size: 26px; font-weight: 700; color: ${C.white}; letter-spacing: -0.5px; }
-  .cb-logo-text span { color: ${C.yellow}; }
-  .cb-nav-links { display: flex; gap: 4px; margin-left: 20px; }
-  
-  .cb-nav-btn { background: transparent; border: none; cursor: pointer; font-family: 'Barlow', sans-serif; font-size: 14px; font-weight: 600; color: ${C.white}; padding: 8px 16px; border-radius: 6px; text-transform: uppercase; letter-spacing: .5px; transition: background .15s; }
-  .cb-nav-btn:hover { background: rgba(255,255,255,.12); }
-  .cb-nav-btn.active { background: ${C.yellow}; color: ${C.navy}; }
-
-  .cb-nav-spacer { flex: 1; }
-  
-  .cb-nav-session { background: transparent; border: 1.5px solid rgba(255,255,255,.4); border-radius: 6px; cursor: pointer; font-family: 'Barlow', sans-serif; font-size: 13px; font-weight: 600; color: ${C.white}; padding: 7px 18px; letter-spacing: .4px; text-transform: uppercase; transition: all .15s; }
-  .cb-nav-session:hover { background: rgba(255,255,255,.1); border-color: ${C.white}; }
 
   .cb-back { display: inline-flex; align-items: center; gap: 6px; margin: 20px 28px 8px; color: ${C.navy}; font-size: 14px; font-weight: 700; background: ${C.white}; border: 1.5px solid ${C.border}; border-radius: 10px; padding: 10px 18px; cursor: pointer; text-transform: uppercase; letter-spacing: .4px; transition: all .15s; box-shadow: 0 1px 3px rgba(15, 23, 42, .04); width: fit-content; }
   .cb-back:hover { background: ${C.navy}; color: ${C.white}; }
@@ -54,21 +42,16 @@ const GLOBAL_CSS = `
   .cb-btn { padding: 14px 18px; border-radius: 10px; cursor: pointer; font-family: 'Barlow', sans-serif; font-size: 16px; font-weight: 700; border: none; transition: all .15s; text-transform: uppercase; letter-spacing: .3px; }
   .cb-btn-yellow { background: ${C.yellow}; color: ${C.navy}; }
   .cb-btn-yellow:hover { background: #e0b310; }
-
-  .cb-footer { background: ${C.navy}; color: rgba(255,255,255,.7); display: flex; align-items: center; justify-content: space-between; padding: 14px 28px; font-size: 13px; margin-top: auto; }
-  .cb-footer-logo { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 18px; color: ${C.white}; }
-  .cb-footer-logo span { color: ${C.yellow}; }
-  .cb-footer-icons { display: flex; gap: 14px; font-size: 18px; }
 `
 
 const initialValues = {
   operario: '',
   robotId: '',
-  tipo: 'Navegación', // Valor por defecto del desplegable
+  tipo: 'Navegación',
   descripcion: '',
 }
 
-export default function FormularioIncidencias() {
+export default function FormularioIncidencias({ onLogout }) {
   const navigate = useNavigate()
   const [form, setForm] = useState(initialValues)
 
@@ -102,22 +85,8 @@ export default function FormularioIncidencias() {
 
   return (
     <div className="cb-page">
-      <nav className="cb-navbar">
-        <div style={{ fontSize: 32, marginRight: 4 }}>🤖</div>
-        <span className="cb-logo-text">Carry<span>bot</span></span>
-
-        <div className="cb-nav-links">
-          <button className="cb-nav-btn" onClick={() => navigate('/')}>Inicio</button>
-          <button className="cb-nav-btn" onClick={() => navigate('/login')}>¡Conéctate!</button>
-          <button className="cb-nav-btn" onClick={() => navigate('/register')}>Registro</button>
-        </div>
-
-        <div className="cb-nav-spacer" />
-
-        <button className="cb-nav-session" style={{ borderColor: C.yellow, color: C.yellow }}>
-          Incidencias
-        </button>
-      </nav>
+      {/* Nuevo Menú Unificado (Variante Trabajador) */}
+      <Navbar variant="trabajador" onLogout={onLogout} />
 
       <button className="cb-back" onClick={() => navigate(-1)}>
         ‹ Volver
@@ -181,9 +150,7 @@ export default function FormularioIncidencias() {
           <span style={{ marginLeft: 8 }}>© Copyright Carrybot</span>
         </div>
         <div className="cb-footer-icons">
-          <span>🐦</span>
-          <span>📸</span>
-          <span>📘</span>
+          <span>🐦</span> <span>📸</span> <span>📘</span>
         </div>
       </footer>
     </div>
