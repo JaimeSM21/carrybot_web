@@ -3,8 +3,8 @@ from mysql.connector import Error
 
 DB_CONFIG = {
     "host": "localhost",
-    "user": "carrybot",
-    "password": "carrybot123",
+    "user": "root",
+    "password": "",
     "database": "robotika"
 }
 

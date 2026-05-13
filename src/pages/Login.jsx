@@ -139,16 +139,17 @@ export default function Login({ onLogin }) {
     return () => document.head.removeChild(styleEl)
   }, [])
 
-  const handleLogin = (e) => {
-    e.preventDefault()
-    const user = loginUser(email, password)
-    if (user) {
-      onLogin(user)
-      navigate('/home')
-    } else {
-      alert('Credenciales incorrectas')
-    }
+  
+const handleLogin = async (e) => {
+  e.preventDefault()
+  try {
+    const user = await loginUser({ email, password })
+    onLogin(user)
+    navigate(user.tipo === 'administrador' ? '/admin/users' : '/home')
+  } catch (err) {
+    alert(err.message || 'Credenciales incorrectas')
   }
+}
 
   return (
     <div className="cb-page">
