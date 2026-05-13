@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import Navbar from '../components/Navbar' // Importación del menú unificado
 
 const C = {
-  navy: '#1a2d5a',     // Azul exacto de tu Login
-  yellow: '#f5c518',   // Amarillo exacto de tu Login
+  navy: '#1a2d5a',
+  yellow: '#f5c518',
   white: '#ffffff',
   gray: '#f4f5f7',
   border: '#dde1ea',
@@ -21,42 +22,7 @@ const GLOBAL_CSS = `
 
   .cb-page { min-height: 100vh; display: flex; flex-direction: column; }
 
-  
-  .cb-navbar { 
-    background: ${C.navy}; 
-    display: flex; align-items: center; gap: 12px; 
-    padding: 0 28px; height: 64px; 
-    box-shadow: 0 2px 12px rgba(26,45,90,.18); 
-  }
-  
-  
-  .cb-logo-text { 
-    font-family: 'Barlow Condensed', sans-serif; 
-    font-size: 26px; font-weight: 700; 
-    color: ${C.white}; letter-spacing: -0.5px; 
-  }
-  .cb-logo-text span { color: ${C.yellow}; }
-
-  .cb-nav-links { display: flex; gap: 4px; margin-left: 20px; }
-  .cb-nav-btn {
-    background: transparent; border: none; cursor: pointer;
-    font-family: 'Barlow', sans-serif; font-size: 14px;
-    font-weight: 600; color: ${C.white};
-    padding: 8px 16px; border-radius: 6px;
-    text-transform: uppercase; letter-spacing: .5px;
-    transition: background .15s;
-  }
-  .cb-nav-btn.active { background: ${C.yellow}; color: ${C.navy}; }
-  
-  .cb-nav-spacer { flex: 1; }
-
-  .cb-nav-session {
-    background: transparent; border: 1.5px solid rgba(255,255,255,.4);
-    border-radius: 6px; cursor: pointer; color: ${C.white};
-    font-family: 'Barlow', sans-serif; font-size: 13px;
-    font-weight: 600; padding: 7px 18px; text-transform: uppercase;
-  }
-
+  /* Se han eliminado las clases antiguas de .cb-navbar, .cb-logo-text y .cb-nav-btn */
 
   .cb-main-content { 
     flex: 1; display: flex; flex-direction: column; 
@@ -95,7 +61,6 @@ const GLOBAL_CSS = `
   }
   .cb-btn-add:hover { background: #e0b310; }
 
-  
   .modal-overlay { 
     position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
     background: ${C.overlay}; display: flex; 
@@ -128,7 +93,7 @@ const GLOBAL_CSS = `
   .cb-footer-icons { display: flex; gap: 14px; font-size: 18px; }
 `
 
-export default function UserManagement() {
+export default function UserManagement({ user, onLogout }) {
   const navigate = useNavigate();
   const [usuarios, setUsuarios] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
@@ -186,21 +151,8 @@ export default function UserManagement() {
 
   return (
     <div className="cb-page">
-      {/* NAVBAR IGUAL AL LOGIN */}
-      <nav className="cb-navbar">
-        <div style={{ fontSize: 32, marginRight: 4 }}>🤖</div>
-        <span className="cb-logo-text">Carry<span>bot</span></span>
-        
-        <div className="cb-nav-links">
-          <button className="cb-nav-btn" onClick={() => navigate('/home')}>Inicio</button>
-          <button className="cb-nav-btn active">Usuarios</button>
-          <button className="cb-nav-btn" onClick={() => navigate('/incidencias')}>Incidencias</button>
-        </div>
-        
-        <div className="cb-nav-spacer" />
-        
-        <button className="cb-nav-session" onClick={() => navigate('/login')}>Cerrar Sesión</button>
-      </nav>
+      {/* MENÚ ADMINISTRADOR UNIFICADO */}
+      <Navbar variant="admin" user={user} onLogout={onLogout} />
 
       <div className="cb-main-content">
         <div className="cb-card">
@@ -237,7 +189,7 @@ export default function UserManagement() {
         <button className="cb-btn-add" onClick={() => setShowAdd(true)}>Añadir Usuario</button>
       </div>
 
-      {/* POPUP: añadir usuario */}
+      {/* POPUPS (Añadir, Editar, Borrar) - Se mantienen intactos */}
       {showAdd && (
         <div className="modal-overlay">
           <div className="modal-box">
@@ -247,13 +199,12 @@ export default function UserManagement() {
               <input className="cb-input" type="email" placeholder="Correo electrónico" required value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
               <input className="cb-input" type="password" placeholder="Contraseña" required value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} />
               <button className="cb-btn-add" style={{marginTop: 10}}>Registrar Trabajador</button>
-              <button type="button" className="cb-nav-session" style={{color: C.navy, borderColor: C.border, marginTop: 10}} onClick={() => setShowAdd(false)}>Cancelar</button>
+              <button type="button" className="btn-action" style={{marginTop: 10, background: '#eee', color: '#333'}} onClick={() => setShowAdd(false)}>Cancelar</button>
             </form>
           </div>
         </div>
       )}
 
-      {/* POPUP: editar usuario */}
       {showEdit && (
         <div className="modal-overlay">
           <div className="modal-box">
@@ -263,13 +214,12 @@ export default function UserManagement() {
               <input className="cb-input" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
               <input className="cb-input" type="password" placeholder="Nueva contraseña (opcional)" onChange={e => setFormData({...formData, password: e.target.value})} />
               <button className="cb-btn-add" style={{marginTop: 10}} onClick={handleUpdate}>Guardar Cambios</button>
-              <button className="cb-nav-session" style={{color: C.navy, borderColor: C.border, marginTop: 10}} onClick={() => setShowEdit(false)}>Volver</button>
+              <button className="btn-action" style={{marginTop: 10, background: '#eee', color: '#333', width: '100%'}} onClick={() => setShowEdit(false)}>Volver</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* POPUP: usuario eliminado */}
       {showDeleteSuccess && (
         <div className="modal-overlay">
           <div className="modal-box">
@@ -282,7 +232,6 @@ export default function UserManagement() {
         </div>
       )}
 
-      {/* FOOTER */}
       <footer className="cb-footer">
         <div>
           <span className="cb-footer-logo">Carry<span>bot</span></span>

@@ -7,12 +7,12 @@ import ProtectedRoute from './components/ProtectedRoute'
 import LandingPage   from './pages/LandingPage'
 import UserManagement from './pages/UserManagement'
 import Inventario from './pages/Inventario'
-import { getSessionUser, logoutSession, seedDemoUser } from './utils/auth'
+import RegistroAlertas from './pages/RegistroAlertas' 
+import RegistroIncidencias from './pages/RegistroIncidencias' // <-- IMPORTANTE: Faltaba esta importación
 import FormularioIncidencias from './pages/FormularioIncidencias'
 import RobotList from './pages/RobotList'
-import RegistroIncidencias from './pages/RegistroIncidencias'
-import RegistroAlertas from './pages/RegistroAlertas'
- 
+import { getSessionUser, logoutSession, seedDemoUser } from './utils/auth'
+
 function App() {
   const [user, setUser] = useState(() => getSessionUser())
 
@@ -31,8 +31,9 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<LandingPage />} />
-
+        {/* RUTAS PÚBLICAS */}
+        <Route path="/" element={<LandingPage user={user} onLogout={handleLogout} />} />
+        
         <Route
           path="/login"
           element={user ? <Navigate to="/home" replace /> : <Login onLogin={handleLogin} />}
@@ -41,6 +42,8 @@ function App() {
           path="/register"
           element={user ? <Navigate to="/home" replace /> : <Register onLogin={handleLogin} />}
         />
+
+        {/* RUTAS PROTEGIDAS TRABAJADOR */}
         <Route
           path="/home"
           element={
@@ -57,15 +60,42 @@ function App() {
             </ProtectedRoute>
           }
         />
+        <Route 
+          path="/contacto"  // Ruta que usa el trabajador para reportar
+          element={
+            <ProtectedRoute isAuthenticated={!!user}>
+              <FormularioIncidencias user={user} onLogout={handleLogout} />
+            </ProtectedRoute>
+          } 
+        />
         <Route
-	  path="/admin/users"
-	  element={
-	    <ProtectedRoute isAuthenticated={!!user}>
-	      <UserManagement user={user} onLogout={handleLogout} />
-	    </ProtectedRoute>
-	  }
-	/>
+          path="/alertas"
+          element={
+            <ProtectedRoute isAuthenticated={!!user}>
+              <RegistroAlertas user={user} onLogout={handleLogout} />
+            </ProtectedRoute>
+          }
+        />
 
+        {/* RUTAS PROTEGIDAS ADMINISTRADOR */}
+        <Route
+          path="/admin/users"
+          element={
+            <ProtectedRoute isAuthenticated={!!user}>
+              <UserManagement user={user} onLogout={handleLogout} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/registro-incidencias" 
+          element={
+            <ProtectedRoute isAuthenticated={!!user}>
+              <RegistroIncidencias user={user} onLogout={handleLogout} />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* CONTROL DE ROBOT INDIVIDUAL */}
         <Route
           path="/robot/:id"
           element={
@@ -75,22 +105,12 @@ function App() {
           }
         />
 
-        <Route path="/contacto" element={<FormularioIncidencias />} />
-        
-        <Route
-          path="/alertas"
-          element={<RegistroAlertas user={user} onLogout={handleLogout} />}
-        />
-        <Route path="/robot"  element={<GestionRobot />} />
-
-        <Route path="/incidencias" element={<RegistroIncidencias />} />
-
+        {/* REDIRECCIÓN POR DEFECTO */}
         <Route path="*" element={<Navigate to={user ? '/home' : '/login'} replace />} />
-
+        
       </Routes>
-      
     </BrowserRouter>
   )
 }
- 
-export default App
+
+export default App;

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import Navbar from '../components/Navbar' // Importación del nuevo menú
 
 const C = {
   navy: '#1a2d5a',
@@ -14,27 +15,7 @@ const GLOBAL_CSS = `
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'Barlow', sans-serif; background: #f0f2f7; }
 
-  .cb-navbar { 
-    background: ${C.navy}; height: 64px; display: flex; align-items: center; 
-    padding: 0 28px; box-shadow: 0 2px 12px rgba(26,45,90,.18); 
-  }
-  .cb-logo-text { font-family: 'Barlow Condensed', sans-serif; font-size: 24px; font-weight: 700; color: ${C.white}; margin-right: 30px; }
-  .cb-logo-text span { color: ${C.yellow}; }
-
-  .cb-nav-left { display: flex; gap: 10px; }
-  .cb-nav-right { margin-left: auto; display: flex; align-items: center; gap: 15px; }
-
-  .cb-nav-btn {
-    background: transparent; border: none; cursor: pointer; color: ${C.white};
-    font-family: 'Barlow', sans-serif; font-size: 14px; font-weight: 600;
-    padding: 8px 16px; border-radius: 6px; text-transform: uppercase;
-  }
-  .cb-nav-btn.active { background: ${C.yellow}; color: ${C.navy}; }
-  
-  .cb-btn-outline {
-    border: 1.5px solid rgba(255,255,255,0.5); border-radius: 6px;
-    padding: 7px 18px; color: white; cursor: pointer; text-transform: uppercase; font-size: 13px; font-weight: 600;
-  }
+  /* Se eliminan estilos manuales de .cb-navbar, .cb-logo, .cb-nav-btn y .cb-btn-outline */
 
   .cb-container { display: flex; flex-direction: column; align-items: center; padding: 40px 20px; }
   
@@ -75,7 +56,6 @@ export default function Inventario({ onLogout }) {
   const [items, setItems] = useState([]);
   const [showAdd, setShowAdd] = useState(false);
   
- 
   const [form, setForm] = useState({ 
     codigo_barras: '', 
     descripcion: '', 
@@ -122,18 +102,8 @@ export default function Inventario({ onLogout }) {
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      <nav className="cb-navbar">
-        <span className="cb-logo-text">Carry<span>bot</span></span>
-        <div className="cb-nav-left">
-          <button className="cb-nav-btn" onClick={() => navigate('/home')}>Inicio</button>
-          <button className="cb-nav-btn active">Inventario</button>
-          <button className="cb-nav-btn" onClick={() => navigate('/contacto')}>Incidencias</button>
-        </div>
-        <div className="cb-nav-right">
-          <button className="cb-nav-btn">Alertas</button>
-          <button className="cb-nav-btn cb-btn-outline" onClick={onLogout}>Cerrar Sesión</button>
-        </div>
-      </nav>
+      {/* MENÚ TRABAJADOR UNIFICADO */}
+      <Navbar variant="trabajador" onLogout={onLogout} />
 
       <div className="cb-container">
         <div className="cb-card">
@@ -183,7 +153,7 @@ export default function Inventario({ onLogout }) {
               <input className="cb-input" type="number" step="0.01" placeholder="Peso (kg)" required onChange={e => setForm({...form, peso_kg: e.target.value})} />
               
               <button className="btn-add-prod" style={{marginTop: 10}}>GUARDAR</button>
-              <button type="button" className="cb-nav-btn" style={{color: C.navy, fontWeight: 700}} onClick={() => setShowAdd(false)}>CANCELAR</button>
+              <button type="button" className="cb-nav-btn" style={{color: C.navy, fontWeight: 700, border: 'none', background: 'transparent', cursor: 'pointer'}} onClick={() => setShowAdd(false)}>CANCELAR</button>
             </form>
           </div>
         </div>
