@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import Navbar from '../components/Navbar' // Importación del menú unificado
 
 const C = {
   navy: '#1a2d5a',     // Azul marino
@@ -21,25 +22,7 @@ const GLOBAL_CSS = `
 
   .cb-page { min-height: 100vh; display: flex; flex-direction: column; }
 
-  /* Navbar superior */
-  .cb-navbar { background: ${C.navy}; display: flex; align-items: center; padding: 0 40px; height: 70px; }
-  .cb-logo { display: flex; align-items: center; gap: 12px; color: white; font-weight: 700; font-size: 24px; text-decoration: none; cursor: pointer; }
-  .cb-logo span { color: ${C.yellow}; }
-  
-  .cb-logo-img { height: 45px; width: auto; object-fit: contain; }
-
-  .cb-nav-links { display: flex; gap: 10px; margin-left: 40px; }
-  .cb-nav-item { background: transparent; border: 1px solid white; color: white; padding: 8px 18px; border-radius: 8px; font-weight: 600; text-transform: uppercase; font-size: 13px; cursor: pointer; transition: all 0.2s; }
-  .cb-nav-item:hover { background: rgba(255,255,255,0.1); }
-  .cb-nav-item.active { background: ${C.yellow}; color: ${C.navy}; }
-
-  .cb-nav-right { margin-left: auto; display: flex; align-items: center; gap: 15px; }
-  
-  .cb-alert-btn { background: transparent; border: 1px solid white; color: white; padding: 8px 18px; border-radius: 8px; font-weight: 600; text-transform: uppercase; font-size: 13px; cursor: pointer; transition: all 0.2s; }
-  .cb-alert-btn:hover { background: rgba(255, 255, 255, 0.1); }
-
-  .cb-logout-btn { background: ${C.blue}; color: white; border: none; padding: 8px 18px; border-radius: 8px; font-weight: 600; text-transform: uppercase; font-size: 13px; cursor: pointer; transition: background 0.2s; }
-  .cb-logout-btn:hover { background: #155a96; }
+  /* Se han eliminado los estilos antiguos de .cb-navbar, .cb-logo, .cb-nav-links, etc. */
 
   .cb-main { flex: 1; padding: 60px 40px; max-width: 1300px; margin: 0 auto; width: 100%; }
   .cb-title { text-align: center; font-size: 30px; font-weight: 700; color: #2c3e50; margin-bottom: 50px; }
@@ -70,7 +53,7 @@ const GLOBAL_CSS = `
   .cb-footer-logo-img { height: 35px; width: auto; opacity: 0.7; }
 `
 
-export default function RobotList() {
+export default function RobotList({ user, onLogout }) {
   const navigate = useNavigate()
   const [robots, setRobots] = useState([])
   const [loading, setLoading] = useState(true)
@@ -81,7 +64,6 @@ export default function RobotList() {
     styleEl.textContent = GLOBAL_CSS
     document.head.appendChild(styleEl)
     
-    // Conexión con el backend de FastAPI
     fetch('http://localhost:8000/robots/')
       .then(res => res.json())
       .then(data => {
@@ -98,46 +80,25 @@ export default function RobotList() {
 
   const handleNav = (path) => navigate(path)
 
-  const handleLogout = () => {
-    localStorage.clear()
-    sessionStorage.clear()
-    navigate('/login')
-    setTimeout(() => { window.location.href = '/login' }, 100)
-  }
-
   return (
     <div className="cb-page">
+      {/* MENÚ TRABAJADOR UNIFICADO */}
+      <Navbar variant="trabajador" user={user} onLogout={onLogout} />
+
       {/* MODAL DE ADVERTENCIA */}
       {showPopup && (
-        <div className="cb-overlay" onClick={() => setShowPopup(false)}>
-          <div className="cb-modal" onClick={e => e.stopPropagation()}>
-            <h2 className="cb-modal-title">⚠️Unidad Fuera de Servicio⚠️</h2>
-            <p className="cb-modal-desc">
+        <div className="cb-overlay" style={{position: 'fixed', top:0, left:0, width:'100%', height:'100%', background:'rgba(0,0,0,0.5)', zIndex: 1000, display:'flex', justifyContent:'center', alignItems:'center'}} onClick={() => setShowPopup(false)}>
+          <div className="cb-modal" style={{background:'white', padding:'40px', borderRadius:'15px', maxWidth:'500px', textAlign:'center'}} onClick={e => e.stopPropagation()}>
+            <h2 className="cb-modal-title" style={{color: C.navy, marginBottom: '20px'}}>⚠️Unidad Fuera de Servicio⚠️</h2>
+            <p className="cb-modal-desc" style={{marginBottom: '30px', lineHeight: '1.6'}}>
               Este robot no está disponible actualmente. Verifique la conexión manual en el almacén o consulte el registro de incidencias.
             </p>
-            <button className="cb-modal-btn" onClick={() => setShowPopup(false)}>
+            <button className="cb-btn-main" onClick={() => setShowPopup(false)}>
               ENTENDIDO
             </button>
           </div>
         </div>
       )}
-
-      {/* NAVEGACIÓN */}
-      <nav className="cb-navbar">
-        <div className="cb-logo" onClick={() => handleNav('/')}>
-          <div style={{ fontSize: 32, marginRight: 8 }}>🤖</div>
-          <span>Carry<span>bot</span></span>
-        </div>
-        <div className="cb-nav-links">
-          <button className="cb-nav-item active" onClick={() => handleNav('/')}>INICIO</button>
-          <button className="cb-nav-item" onClick={() => handleNav('/inventario')}>INVENTARIO</button>
-          <button className="cb-nav-item" onClick={() => handleNav('/contacto')}>INCIDENCIAS</button>
-        </div>
-        <div className="cb-nav-right">
-          <button className="cb-alert-btn" onClick={() => handleNav('/alertas')}>ALERTAS</button>
-          <button className="cb-logout-btn" onClick={handleLogout}>CERRAR SESIÓN</button>
-        </div>
-      </nav>
 
       {/* CONTENIDO PRINCIPAL */}
       <div className="cb-main">
@@ -155,7 +116,6 @@ export default function RobotList() {
                 </div>
                 
                 <div className="cb-card-body">
-                  {/* Etiqueta de estado dinámico */}
                   <div className={`cb-badge ${
                     robot.estado === 'activo' ? 'status-listo' : 
                     robot.estado === 'en_tarea' ? 'status-ruta' : 'status-off'
@@ -175,7 +135,6 @@ export default function RobotList() {
                     <span>{robot.ubicacion || 'Almacén Central'}</span>
                   </div>
 
-                  {/* Lógica de botones según disponibilidad */}
                   {['activo', 'en_tarea'].includes(robot.estado) ? (
                     <button className="cb-btn-main" onClick={() => handleNav(`/robot/${robot.id}`)}>
                       PANEL DE CONTROL
@@ -192,14 +151,13 @@ export default function RobotList() {
         )}
       </div>
 
-      {/* PIE DE PÁGINA */}
       <footer className="cb-footer">
         <div className="cb-footer-content">
-          <div className="cb-logo" style={{ fontSize: '20px', cursor: 'default' }}>
+          <div style={{ fontSize: '20px', color: 'white', fontWeight: 700, display: 'flex', alignItems: 'center' }}>
             <div style={{ marginRight: 8 }}>🤖</div>
-            <span>Carry<span>bot</span></span>
+            <span>Carrybot</span>
           </div>
-          <span>© Copyright Carrybot</span>
+          <span style={{ marginLeft: '15px', color: '#8892b0' }}>© Copyright Carrybot</span>
         </div>
       </footer>
     </div>

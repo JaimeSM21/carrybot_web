@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { draw_occupancy_grid } from '../js/draw_occupancy_grid.js';
+import Navbar from '../components/Navbar'; // Importación del nuevo menú
 
 // ─── Colores Carrybot ────────────────────────────────────────────────────────
 const C = {
@@ -29,38 +30,11 @@ function useRoslib() {
   return loaded;
 }
 
-// ─── Estilos globales ─────────────────────────────────────────────────────────
+// ─── Estilos globales (Limpios de Navbar y Footer) ──────────────────────────
 const GLOBAL_CSS = `
   @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap');
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'Barlow', sans-serif; background: #f0f2f7; }
-
-  .cb-navbar {
-    background: ${C.navy};
-    display: flex; align-items: center; gap: 12px;
-    padding: 0 28px; height: 64px;
-    box-shadow: 0 2px 12px rgba(26,45,90,.18);
-  }
-  .cb-logo-text { font-family: 'Barlow Condensed', sans-serif; font-size: 26px; font-weight: 700; color: ${C.white}; letter-spacing: -0.5px; }
-  .cb-logo-text span { color: ${C.yellow}; }
-  .cb-nav-links { display: flex; gap: 4px; margin-left: 20px; }
-  .cb-nav-btn {
-    background: transparent; border: none; cursor: pointer;
-    font-family: 'Barlow', sans-serif; font-size: 14px; font-weight: 600;
-    color: ${C.white}; padding: 8px 16px; border-radius: 6px;
-    text-transform: uppercase; letter-spacing: .5px; transition: background .15s;
-  }
-  .cb-nav-btn:hover { background: rgba(255,255,255,.12); }
-  .cb-nav-btn.active { background: ${C.yellow}; color: ${C.navy}; }
-  .cb-nav-spacer { flex: 1; }
-  .cb-nav-session {
-    background: transparent; border: 1.5px solid rgba(255,255,255,.4);
-    border-radius: 6px; cursor: pointer;
-    font-family: 'Barlow', sans-serif; font-size: 13px; font-weight: 600;
-    color: ${C.white}; padding: 7px 18px; letter-spacing: .4px;
-    text-transform: uppercase; transition: all .15s;
-  }
-  .cb-nav-session:hover { background: rgba(255,255,255,.1); border-color: ${C.white}; }
 
   .cb-back {
     display: inline-flex; align-items: center; gap: 6px;
@@ -133,7 +107,6 @@ const GLOBAL_CSS = `
     display: flex; flex-direction: column; align-items: center; gap: 8px;
   }
 
-  /* ── Badge de detección sobre la cámara ── */
   .cb-detection-badge {
     position: absolute; top: 10px; left: 10px;
     display: flex; flex-direction: column; gap: 4px;
@@ -150,7 +123,6 @@ const GLOBAL_CSS = `
   .cb-det-pill.none { background: rgba(0,0,0,.45);      color: rgba(255,255,255,.7); }
   .cb-det-dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
 
-  /* ── Toggle cámara procesada ── */
   .cb-cam-toggle {
     position: absolute; bottom: 10px; right: 10px;
     background: rgba(26,45,90,.75); color: ${C.white};
@@ -162,7 +134,6 @@ const GLOBAL_CSS = `
   .cb-cam-toggle:hover { background: ${C.navy}; border-color: ${C.yellow}; color: ${C.yellow}; }
   .cb-cam-toggle.active { background: ${C.yellow}; color: ${C.navy}; border-color: ${C.yellow}; }
 
-  /* ── Panel Visión IA ── */
   .cb-vision-grid {
     display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;
   }
@@ -198,7 +169,6 @@ const GLOBAL_CSS = `
     font-size: 13px; display: flex; flex-direction: column; align-items: center; gap: 8px;
   }
 
-  /* Joystick */
   .cb-dpad {
     display: grid; grid-template-columns: repeat(3, 44px);
     grid-template-rows: repeat(3, 44px); gap: 4px;
@@ -216,7 +186,6 @@ const GLOBAL_CSS = `
   .cb-dpad-btn.center:hover { background: #c93333; }
   .cb-dpad-btn.empty { background: transparent; border: none; cursor: default; }
 
-  /* Mapa */
   .cb-map-box {
     width: 100%; aspect-ratio: 1;
     background: #e8ecf0; border-radius: 8px; overflow: hidden;
@@ -237,7 +206,6 @@ const GLOBAL_CSS = `
     text-transform: uppercase; letter-spacing: .5px;
   }
 
-  /* Telemetría */
   .cb-telem { display: flex; flex-direction: column; gap: 10px; }
   .cb-telem-row {
     display: flex; justify-content: space-between; align-items: center;
@@ -247,7 +215,6 @@ const GLOBAL_CSS = `
   .cb-telem-label { color: ${C.muted}; font-weight: 500; }
   .cb-telem-val { color: ${C.text}; font-weight: 700; font-variant-numeric: tabular-nums; }
 
-  /* Conexión */
   .cb-conn-row { display: flex; gap: 8px; margin-bottom: 12px; align-items: center; }
   .cb-conn-input {
     flex: 1; border: 1.5px solid ${C.border}; border-radius: 6px;
@@ -269,30 +236,18 @@ const GLOBAL_CSS = `
   .cb-btn-yellow { background: ${C.yellow}; color: ${C.navy}; }
   .cb-btn-yellow:hover { background: #e0b310; }
 
-  /* Anuncios */
   .cb-announcement {
     background: #fffbeb; border: 1.5px solid #f5c518;
     border-radius: 8px; padding: 10px 14px;
     font-size: 13px; color: ${C.text}; margin-top: 8px;
     display: flex; align-items: flex-start; gap: 8px;
   }
-
-  /* Footer */
-  .cb-footer {
-    background: ${C.navy}; color: rgba(255,255,255,.7);
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 14px 28px; font-size: 13px; margin-top: 8px;
-  }
-  .cb-footer-logo { font-family: 'Barlow Condensed',sans-serif; font-weight: 700; font-size: 18px; color: ${C.white}; }
-  .cb-footer-logo span { color: ${C.yellow}; }
-  .cb-footer-icons { display: flex; gap: 14px; font-size: 18px; }
 `;
 
 // ─── Componente principal ─────────────────────────────────────────────────────
 export default function GestionRobot({ user, onLogout }) {
   const navigate    = useNavigate();
   const roslibLoaded = useRoslib();
-  // ID del robot en la BD — debe coincidir con el INSERT del paso 1.1
   const ROBOT_ID = 1;
   const [address,      setAddress]      = useState("ws://127.0.0.1:9090/");
   const [connected,    setConnected]    = useState(false);
@@ -302,10 +257,7 @@ export default function GestionRobot({ user, onLogout }) {
   const [mapDot,       setMapDot]       = useState({ left: "50%", top: "50%" });
   const [vistaActiva,  setVistaActiva]  = useState("camara");
 
-  // ── Estado de visión artificial ───────────────────────────────────────────
-  /** detection: { box_detected, boxes, qr_detected, qr_data, qr_parsed } | null */
   const [detection,      setDetection]      = useState(null);
-  /** showProcessed: muestra /camera/processed en lugar de /camera/image_raw */
   const [showProcessed,  setShowProcessed]  = useState(false);
 
   const rosRef       = useRef(null);
@@ -314,10 +266,9 @@ export default function GestionRobot({ user, onLogout }) {
   const announcRef   = useRef(null);
   const mapCanvasRef = useRef(null);
   const positionRef  = useRef({ x: 0, y: 0 });
-  const [robotDB,      setRobotDB]      = useState(null);   // datos del robot en BD
-  const [tareaActual,  setTareaActual]  = useState(null);   // id de la tarea en curso
+  const [robotDB,      setRobotDB]      = useState(null);
+  const [tareaActual,  setTareaActual]  = useState(null);
 
-  // ── Inyectar estilos ──────────────────────────────────────────────────────
   useEffect(() => {
     const el = document.createElement("style");
     el.textContent = GLOBAL_CSS;
@@ -325,7 +276,6 @@ export default function GestionRobot({ user, onLogout }) {
     return () => document.head.removeChild(el);
   }, []);
 
-  // Cargar datos del robot desde la BD al montar la pantalla
     useEffect(() => {
       fetch(`http://localhost:8000/robots/${ROBOT_ID}`)
         .then(res => res.json())
@@ -345,13 +295,12 @@ export default function GestionRobot({ user, onLogout }) {
             y: positionRef.current.y,
             z: 0.0,
           }),
-        }).catch(() => {});   // fallo silencioso: no interrumpe la UI
+        }).catch(() => {});
       }, 5000);
 
       return () => clearInterval(interval);
     }, [connected]);
 
-  // ── Conectar / desconectar ────────────────────────────────────────────────
   const connect = useCallback(() => {
     if (!roslibLoaded || !window.ROSLIB) return;
     const ros = new window.ROSLIB.Ros({ url: address });
@@ -359,12 +308,10 @@ export default function GestionRobot({ user, onLogout }) {
     ros.on("connection", () => {
       setConnected(true);
 
-      // /cmd_vel
       cmdVelRef.current = new window.ROSLIB.Topic({
         ros, name: "/cmd_vel", messageType: "geometry_msgs/msg/Twist",
       });
 
-      // /odom
       odomRef.current = new window.ROSLIB.Topic({
         ros, name: "/odom", messageType: "nav_msgs/msg/Odometry",
       });
@@ -378,7 +325,6 @@ export default function GestionRobot({ user, onLogout }) {
         setMapDot({ left: `${px}%`, top: `${py}%` });
       });
 
-      // /map — minimapa
       const mapTopic = new window.ROSLIB.Topic({
         ros,
         name: '/map',
@@ -399,7 +345,6 @@ export default function GestionRobot({ user, onLogout }) {
         }
       });
 
-      // /delivery/announcement
       announcRef.current = new window.ROSLIB.Topic({
         ros, name: "/delivery/announcement", messageType: "std_msgs/msg/String",
       });
@@ -408,10 +353,6 @@ export default function GestionRobot({ user, onLogout }) {
         setTimeout(() => setAnnouncement(null), 8000);
       });
 
-      // ── /package/detection — NUEVO ────────────────────────────────────────
-      // Suscribirse al topic publicado por package_detector.py (JSON string).
-      // Usamos setDetection directamente: React no tiene closures stale aquí
-      // porque no leemos el estado anterior dentro del callback.
       const detectionTopic = new window.ROSLIB.Topic({
         ros,
         name: '/package/detection',
@@ -421,7 +362,6 @@ export default function GestionRobot({ user, onLogout }) {
         try {
           const parsed = JSON.parse(msg.data);
           setDetection(parsed);
-          // Si hay QR con destino válido y no hay ya una tarea activa, crearla
           const DESTINOS_COORDS = {
             Estanteria1:  { x: 6.917, y: 2.282 },
             Estanteria2:  { x: 8.808, y: 2.295 },
@@ -436,11 +376,11 @@ export default function GestionRobot({ user, onLogout }) {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                  id_robot:        ROBOT_ID,
+                  id_robot:         ROBOT_ID,
                   destino_nombre:  dest,
-                  destino_x:       coords.x,
-                  destino_y:       coords.y,
-                  qr_data:         parsed.qr_data,
+                  destino_x:        coords.x,
+                  destino_y:        coords.y,
+                  qr_data:          parsed.qr_data,
                 }),
               })
                 .then(res => res.json())
@@ -491,44 +431,25 @@ export default function GestionRobot({ user, onLogout }) {
 
   const stop = useCallback(() => publishVel(0, 0), [publishVel]);
 
-  // ── URL de la cámara (raw o procesada) ───────────────────────────────────
   const cameraUrl = showProcessed
     ? "http://localhost:8080/stream?topic=/camera/processed"
     : "http://localhost:8080/stream?topic=/camera/image_raw";
 
-  // ── Renderizado ───────────────────────────────────────────────────────────
   return (
     <div>
-      {/* NAVBAR */}
-      <nav className="cb-navbar">
-        <div style={{ fontSize: 32, marginRight: 4 }}>🤖</div>
-        <span className="cb-logo-text">Carry<span>bot</span></span>
-        <div className="cb-nav-links">
-          <button className="cb-nav-btn active">Inicio</button>
-          <button className="cb-nav-btn">¡Conéctate!</button>
-          <button className="cb-nav-btn">Registro</button>
-        </div>
-        <div className="cb-nav-spacer" />
-        <button
-          className="cb-nav-session"
-          onClick={() => { onLogout?.(); navigate("/login", { replace: true }); }}
-        >
-          Cerrar sesión
-        </button>
-      </nav>
+      {/* MENÚ TRABAJADOR UNIFICADO */}
+      <Navbar variant="trabajador" onLogout={onLogout} />
 
-      {/* VOLVER */}
-      <button className="cb-back" onClick={() => navigate("/login")}>
+      <button className="cb-back" onClick={() => navigate(-1)}>
         ‹ Volver
       </button>
 
-      {/* LAYOUT PRINCIPAL */}
       <div className="cb-layout">
 
         {/* ── COLUMNA IZQUIERDA ── */}
         <div>
           <div style={{ fontSize: 13, color: C.muted, fontWeight: 600, marginBottom: 12 }}>
-            Sesión activa: {user?.name || user?.email || "Operador"}
+            Sesión activa: {user?.nombre || user?.email || "Operador"}
           </div>
 
           <div className="cb-card">
@@ -539,7 +460,7 @@ export default function GestionRobot({ user, onLogout }) {
                 ["nav",       " Navegación autónoma"],
                 ["patrol",    "Patrulla de zona"],
                 ["delivery",  " Gestión de entregas"],
-                ["vision",    "🔍 Visión IA"],   // ← NUEVO
+                ["vision",    "🔍 Visión IA"],
                 ["status",    " Estado del robot"],
               ].map(([key, label]) => (
                 <button
@@ -553,7 +474,6 @@ export default function GestionRobot({ user, onLogout }) {
             </div>
           </div>
 
-          {/* Conexión rosbridge */}
           <div className="cb-card" style={{ marginTop: 12 }}>
             <div className="cb-card-header"> Conexión ROS</div>
             <div className="cb-card-body">
@@ -583,7 +503,6 @@ export default function GestionRobot({ user, onLogout }) {
             </div>
           </div>
 
-          {/* Telemetría */}
           <div className="cb-card" style={{ marginTop: 12 }}>
             <div className="cb-card-header">Telemetría</div>
             <div className="cb-card-body">
@@ -607,12 +526,11 @@ export default function GestionRobot({ user, onLogout }) {
           </div>
         </div>
 
-        {/* ── COLUMNA CENTRAL: Cámara / Mapa ── */}
+        {/* ── COLUMNA CENTRAL ── */}
         <div>
           <div className="cb-card">
             <div className="cb-card-header">📷 Cámara / Mapa</div>
             <div className="cb-card-body">
-              {/* Selector de vista */}
               <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
                 <button
                   className={`cb-btn ${vistaActiva === 'camara' ? 'cb-btn-primary' : ''}`}
@@ -630,12 +548,10 @@ export default function GestionRobot({ user, onLogout }) {
                 </button>
               </div>
 
-              {/* Contenedor unificado */}
               <div style={{
                 position: 'relative', width: '100%', aspectRatio: '16/9',
                 background: '#0d1117', borderRadius: 8, overflow: 'hidden',
               }}>
-                {/* ── CÁMARA ── */}
                 <div style={{ display: vistaActiva === 'camara' ? 'block' : 'none', width: '100%', height: '100%' }}>
                   {connected ? (
                     <>
@@ -650,7 +566,6 @@ export default function GestionRobot({ user, onLogout }) {
                       </div>
                       <div className="cb-camera-status" />
 
-                      {/* ── Badge de detección (NUEVO) ── */}
                       <div className="cb-detection-badge">
                         {detection ? (
                           <>
@@ -672,7 +587,6 @@ export default function GestionRobot({ user, onLogout }) {
                         )}
                       </div>
 
-                      {/* ── Toggle cámara procesada (NUEVO) ── */}
                       <button
                         className={`cb-cam-toggle${showProcessed ? ' active' : ''}`}
                         onClick={() => setShowProcessed(v => !v)}
@@ -689,7 +603,6 @@ export default function GestionRobot({ user, onLogout }) {
                   )}
                 </div>
 
-                {/* ── MAPA ── */}
                 <div style={{ display: vistaActiva === 'mapa' ? 'block' : 'none', width: '100%', height: '100%' }}>
                   <canvas
                     ref={mapCanvasRef}
@@ -704,7 +617,6 @@ export default function GestionRobot({ user, onLogout }) {
                 </div>
               </div>
 
-              {/* Anuncio de entrega */}
               {announcement && (
                 <div className="cb-announcement">
                   <span style={{ fontSize: 18 }}>📦</span>
@@ -713,8 +625,6 @@ export default function GestionRobot({ user, onLogout }) {
               )}
             </div>
           </div>
-
-          {/* ── Panel dinámico ── */}
 
           {activePanel === "teleop" && (
             <div className="cb-card" style={{ marginTop: 12 }}>
@@ -790,7 +700,6 @@ export default function GestionRobot({ user, onLogout }) {
             </div>
           )}
 
-          {/* ── PANEL VISIÓN IA (NUEVO) ── */}
           {activePanel === "vision" && (
             <div className="cb-card" style={{ marginTop: 12 }}>
               <div className="cb-card-header">🔍 Visión IA — Detección de paquetes</div>
@@ -814,7 +723,6 @@ export default function GestionRobot({ user, onLogout }) {
                   </div>
                 ) : (
                   <>
-                    {/* Estadísticas rápidas */}
                     <div className="cb-vision-grid">
                       <div className="cb-vision-stat">
                         <div className={`cb-vision-stat-val${detection.box_detected ? ' green' : ''}`}>
@@ -830,13 +738,11 @@ export default function GestionRobot({ user, onLogout }) {
                       </div>
                     </div>
 
-                    {/* Resultado QR */}
                     {detection.qr_detected && (
                       <div className="cb-qr-result">
                         <div className="cb-qr-result-title">📦 Datos del paquete (QR)</div>
 
                         {detection.qr_parsed ? (
-                          /* QR en formato JSON — mostrar campos */
                           Object.entries(detection.qr_parsed).map(([k, v]) => (
                             <div className="cb-qr-field" key={k}>
                               <span className="cb-qr-field-label">{k}</span>
@@ -844,19 +750,16 @@ export default function GestionRobot({ user, onLogout }) {
                             </div>
                           ))
                         ) : (
-                          /* QR en texto libre */
                           <div className="cb-qr-field">
                             <span className="cb-qr-field-label">Contenido</span>
                             <span className="cb-qr-field-val">{detection.qr_data}</span>
                           </div>
                         )}
 
-                        {/* Raw siempre visible como referencia */}
                         <div className="cb-qr-raw">{detection.qr_data}</div>
                       </div>
                     )}
 
-                    {/* Sin resultados */}
                     {!detection.box_detected && !detection.qr_detected && (
                       <div className="cb-no-detection" style={{ padding: '16px 0 0' }}>
                         <div style={{ fontSize: 28 }}>🔍</div>
@@ -864,21 +767,16 @@ export default function GestionRobot({ user, onLogout }) {
                       </div>
                     )}
 
-                    {/* Botón de navegación directa al destino del QR */}
                     {detection.qr_parsed?.dest && connected && (
                       <button
                         className="cb-control-btn active"
                         style={{ marginTop: 12, background: C.yellow, color: C.navy, borderColor: C.yellow }}
                         onClick={() => {
                                 publishCommand('/web/nav_goal', detection.qr_parsed.dest);
-
-                                // Marcar tarea como en_curso
                                 if (tareaActual) {
                                   fetch(`http://localhost:8000/tareas/${tareaActual}/estado?estado=en_curso`, {
                                     method: 'PUT',
                                   }).catch(() => {});
-
-                                  // Marcar robot como en_tarea
                                   fetch(`http://localhost:8000/robots/${ROBOT_ID}/estado?estado=en_tarea`, {
                                     method: 'PUT',
                                   }).catch(() => {});
@@ -889,7 +787,6 @@ export default function GestionRobot({ user, onLogout }) {
                       </button>
                     )}
 
-                    {/* Consejo: activar vista procesada */}
                     <div style={{
                       marginTop: 10, padding: '8px 10px',
                       background: '#f0f9ff', border: '1.5px solid #bae6fd',
@@ -929,7 +826,6 @@ export default function GestionRobot({ user, onLogout }) {
           )}
         </div>
 
-        {/* Botón STOP — siempre visible cuando está conectado */}
         {connected && (
           <div style={{ marginTop: 12 }}>
             <button
@@ -942,21 +838,17 @@ export default function GestionRobot({ user, onLogout }) {
                 textTransform: 'uppercase',
               }}
               onClick={() => {
-                            publishCommand('/web/cancel', 'stop');
-
-                            // Cancelar tarea activa en BD
-                            if (tareaActual) {
-                              fetch(`http://localhost:8000/tareas/${tareaActual}/estado?estado=cancelada`, {
-                                method: 'PUT',
-                              }).catch(() => {});
-                              setTareaActual(null);
-
-                              // Robot vuelve a activo
-                              fetch(`http://localhost:8000/robots/${ROBOT_ID}/estado?estado=activo`, {
-                                method: 'PUT',
-                              }).catch(() => {});
-                            }
-                          }}
+                          publishCommand('/web/cancel', 'stop');
+                          if (tareaActual) {
+                            fetch(`http://localhost:8000/tareas/${tareaActual}/estado?estado=cancelada`, {
+                              method: 'PUT',
+                            }).catch(() => {});
+                            setTareaActual(null);
+                            fetch(`http://localhost:8000/robots/${ROBOT_ID}/estado?estado=activo`, {
+                              method: 'PUT',
+                            }).catch(() => {});
+                          }
+                        }}
             >
               STOP — Cancelar acción
             </button>
@@ -964,7 +856,6 @@ export default function GestionRobot({ user, onLogout }) {
         )}
       </div>
 
-      {/* FOOTER */}
       <footer className="cb-footer">
         <div>
           <span className="cb-footer-logo">Carry<span>bot</span></span>

@@ -54,3 +54,30 @@ def login(usuario: UsuarioLogin):
         "email": user['email'],
         "tipo": user['tipo'],
     }
+    
+    # --- PRUEBA PARA EDITAR EN ADMINISTRADOR---
+
+@router.get("/")
+def get_usuarios():
+    
+    return fetch_query("SELECT id, nombre, email, fecha_alta FROM usuarios")
+
+@router.delete("/{user_id}")
+def eliminar_usuario(user_id: int):
+   
+    execute_query("DELETE FROM usuarios WHERE id = %s", (user_id,))
+    return {"message": "Eliminado"}
+
+@router.put("/{user_id}")
+def actualizar_usuario(user_id: int, datos: dict):
+   
+    if datos.get('password'):
+        hashed = bcrypt.hashpw(datos['password'].encode('utf-8'), bcrypt.gensalt())
+        query = "UPDATE usuarios SET nombre=%s, email=%s, password=%s WHERE id=%s"
+        params = (datos['nombre'], datos['email'], hashed.decode('utf-8'), user_id)
+    else:
+        query = "UPDATE usuarios SET nombre=%s, email=%s WHERE id=%s"
+        params = (datos['nombre'], datos['email'], user_id)
+    
+    execute_query(query, params)
+    return {"message": "Actualizado"}

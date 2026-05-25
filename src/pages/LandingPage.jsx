@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import Navbar from '../components/Navbar'; // Importamos el nuevo menú unificado
 
 const CSS = `
 @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800&family=Barlow:wght@400;500;600&display=swap');
@@ -13,79 +14,7 @@ const CSS = `
   flex-direction: column;
 }
 
-/* NAV */
-.lp-nav {
-  background: #1a2d5a;
-  display: flex;
-  align-items: center;
-  padding: 0 40px;
-  height: 68px;
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  box-shadow: 0 2px 16px rgba(26,45,90,.25);
-}
-.lp-logo {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  text-decoration: none;
-}
-.lp-logo-icon {
-  width: 44px;
-  height: 44px;
-  background: #f5c518;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 22px;
-}
-.lp-logo-text {
-  font-family: 'Barlow Condensed', sans-serif;
-  font-size: 28px;
-  font-weight: 800;
-  color: #fff;
-  letter-spacing: -0.5px;
-}
-.lp-logo-text span { color: #f5c518; }
-.lp-nav-links {
-  display: flex;
-  gap: 4px;
-  margin-left: 24px;
-}
-.lp-nav-btn {
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  font-family: 'Barlow', sans-serif;
-  font-size: 13px;
-  font-weight: 600;
-  color: rgba(255,255,255,.8);
-  padding: 8px 16px;
-  border-radius: 6px;
-  text-transform: uppercase;
-  letter-spacing: .6px;
-  transition: all .15s;
-}
-.lp-nav-btn:hover { background: rgba(255,255,255,.1); color: #fff; }
-.lp-nav-btn.active { background: #f5c518; color: #1a2d5a; }
-.lp-nav-spacer { flex: 1; }
-.lp-nav-contact {
-  background: transparent;
-  border: 1.5px solid rgba(255,255,255,.35);
-  border-radius: 6px;
-  cursor: pointer;
-  font-family: 'Barlow', sans-serif;
-  font-size: 12px;
-  font-weight: 700;
-  color: #fff;
-  padding: 8px 18px;
-  text-transform: uppercase;
-  letter-spacing: .6px;
-  transition: all .15s;
-}
-.lp-nav-contact:hover { background: rgba(255,255,255,.1); border-color: #fff; }
+/* --- NAV ANTIGUO ELIMINADO (Ahora gestionado por Navbar.jsx e index.css) --- */
 
 /* HERO */
 .lp-hero {
@@ -157,7 +86,7 @@ const CSS = `
 .lp-video-box {
   background: #fffbeb;
   border: 2.5px dashed #f5c518;
-  border-radius: 16px;
+  border-radius: 166px;
   aspect-ratio: 16/10;
   display: flex;
   align-items: center;
@@ -355,7 +284,6 @@ export default function LandingPage() {
     return () => document.head.removeChild(styleEl);
   }, []);
 
-  // Animacion de entrada al hacer scroll
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => entries.forEach((e) => {
@@ -370,24 +298,8 @@ export default function LandingPage() {
   return (
     <div className="lp-root">
 
-      {/* NAVBAR */}
-      <nav className="lp-nav">
-        <div className="lp-logo">
-          <div className="lp-logo-icon">🤖</div>
-          <span className="lp-logo-text">Carry<span>bot</span></span>
-        </div>
-        <div className="lp-nav-links">
-          <button className="lp-nav-btn active">Inicio</button>
-          <button className="lp-nav-btn" onClick={() => navigate("/login")}>
-            ¡Conéctate!
-          </button>
-          <button className="lp-nav-btn" onClick={() => navigate("/register")}>
-            Registro
-          </button>
-        </div>
-        <div className="lp-nav-spacer" />
-        <button className="lp-nav-contact" onClick={() => navigate("/contacto")}>Contáctanos</button>
-      </nav>
+      {/* MENÚ PÚBLICO UNIFICADO */}
+      <Navbar variant="publico" />
 
       {/* HERO */}
       <section className="lp-hero">
@@ -415,7 +327,6 @@ export default function LandingPage() {
 
         <div className="lp-fade-in" style={{ animationDelay: ".15s" }}>
           <div className="lp-video-box">
-            
             <video src="/videos/demo.mp4" autoPlay muted loop />
           </div>
         </div>

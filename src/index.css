@@ -1,1 +1,73 @@
+.cb-navbar {
+  background: #1a2d5a;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  padding: 0 28px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+}
 
+.cb-logo-section {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  margin-right: 30px;
+}
+
+.cb-nav-logo-img {
+  height: 50px;      
+  width: auto;      
+  object-fit: contain;
+  margin-right: 10px;
+  display: block;
+}
+
+.cb-logo-text {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 24px;
+  font-weight: 700;
+  color: white;
+  display: flex;
+  align-items: center;
+  line-height: 1;
+}
+.cb-logo-text span { color: #f5c518; }
+
+.cb-nav-left { display: flex; gap: 8px; }
+.cb-nav-spacer { flex: 1; }
+.cb-nav-right { display: flex; align-items: center; gap: 15px; }
+
+.cb-nav-btn {
+  background: transparent;
+  border: none;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: 600;
+  text-transform: uppercase;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.2s;
+}
+
+.cb-nav-btn.active {
+  background: #f5c518;
+  color: #1a2d5a;
+}
+
+.cb-nav-session {
+  border: 1.5px solid rgba(255,255,255,0.5);
+  background: transparent;
+  color: white;
+  padding: 7px 18px;
+  border-radius: 6px;
+  font-weight: 700;
+  cursor: pointer;
+  text-transform: uppercase;
+  font-size: 13px;
+}
+
+.cb-nav-session:hover {
+  background: rgba(255,255,255,0.1);
+  border-color: white;
+}
