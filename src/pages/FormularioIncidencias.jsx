@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import Navbar from '../components/Navbar' // Importamos el nuevo menú
 
+// Paleta de colores y tokens de diseño corporativos
 const C = {
   navy: '#1a2d5a',
   yellow: '#f5c518',
@@ -15,15 +15,70 @@ const C = {
   cardBg: '#ffffff',
 }
 
-// Eliminamos todo lo referente a .cb-navbar y .cb-footer que ya está en index.css
+// Estilos globales e interactivos de la aplicación
 const GLOBAL_CSS = `
   @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap');
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Barlow', sans-serif; background: #f0f2f7; }
+  body { font-family: 'Barlow', sans-serif; background: #f0f2f7; color: ${C.text}; }
 
   .cb-page { min-height: 100vh; display: flex; flex-direction: column; }
 
+  /* Estilos del Navbar local autoportante */
+  .cb-navbar {
+    background: ${C.navy};
+    padding: 15px 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: white;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  }
+  .cb-logo {
+    display: flex;
+    align-items: center;
+    font-weight: 700;
+    font-size: 24px;
+    cursor: pointer;
+  }
+  .cb-logo span { color: ${C.yellow}; }
+  .cb-nav-links {
+    display: flex;
+    gap: 20px;
+  }
+  .cb-nav-item {
+    background: none;
+    border: none;
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 15px;
+    text-transform: uppercase;
+    padding: 8px 12px;
+    border-radius: 6px;
+    transition: all 0.2s;
+  }
+  .cb-nav-item:hover, .cb-nav-item.active {
+    background: rgba(255, 255, 255, 0.1);
+    color: ${C.yellow};
+  }
+  .cb-nav-right {
+    display: flex;
+    gap: 15px;
+  }
+  .cb-logout-btn {
+    background: ${C.danger};
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: opacity 0.2s;
+  }
+  .cb-logout-btn:hover { opacity: 0.9; }
+
+  /* Botón de volver */
   .cb-back { display: inline-flex; align-items: center; gap: 6px; margin: 20px 28px 8px; color: ${C.navy}; font-size: 14px; font-weight: 700; background: ${C.white}; border: 1.5px solid ${C.border}; border-radius: 10px; padding: 10px 18px; cursor: pointer; text-transform: uppercase; letter-spacing: .4px; transition: all .15s; box-shadow: 0 1px 3px rgba(15, 23, 42, .04); width: fit-content; }
   .cb-back:hover { background: ${C.navy}; color: ${C.white}; }
 
@@ -42,23 +97,139 @@ const GLOBAL_CSS = `
   .cb-btn { padding: 14px 18px; border-radius: 10px; cursor: pointer; font-family: 'Barlow', sans-serif; font-size: 16px; font-weight: 700; border: none; transition: all .15s; text-transform: uppercase; letter-spacing: .3px; }
   .cb-btn-yellow { background: ${C.yellow}; color: ${C.navy}; }
   .cb-btn-yellow:hover { background: #e0b310; }
+
+  .form-label-incidencia { font-size: 14px; font-weight: 700; color: ${C.navy}; margin-bottom: -4px; text-transform: uppercase; letter-spacing: .3px;}
+
+  /* Footer */
+  .cb-footer { background: #111e3d; color: white; padding: 20px 30px; display: flex; justify-content: space-between; align-items: center; margin-top: auto; }
+  .cb-footer-logo { font-weight: 700; }
+  .cb-footer-logo span { color: ${C.yellow}; }
 `
 
-const initialValues = {
-  operario: '',
-  robotId: '',
-  tipo: 'Navegación',
-  descripcion: '',
+// Componente Navbar local para evitar el error de archivo no encontrado
+function LocalNavbar({ onLogout }) {
+  return (
+    <nav className="cb-navbar">
+      <div className="cb-logo">
+        <span style={{ marginRight: '8px' }}>🤖</span>
+        Carry<span>bot</span>
+      </div>
+      <div className="cb-nav-links">
+        <button className="cb-nav-item">Inicio</button>
+        <button className="cb-nav-item">Inventario</button>
+        <button className="cb-nav-item active">Incidencias</button>
+      </div>
+      <div className="cb-nav-right">
+        <button className="cb-logout-btn" onClick={onLogout}>Cerrar Sesión</button>
+      </div>
+    </nav>
+  )
 }
 
+// EXPORTACIÓN POR DEFECTO RESTAURADA: Soluciona el error SyntaxError de Vite
 export default function FormularioIncidencias({ onLogout }) {
   const navigate = useNavigate()
-  const [form, setForm] = useState(initialValues)
+  const [listaRobots, setListaRobots] = useState([])
+
+  // Buscador inteligente de sesión de usuario activa
+  const obtenerNombreOperario = () => {
+    try {
+      const storages = [window.localStorage, window.sessionStorage]
+      for (const storage of storages) {
+        if (!storage) continue
+        const keys = ['carrybot_session', 'user', 'usuario', 'session', 'login', 'userData']
+        for (const key of keys) {
+          const raw = storage.getItem(key)
+          if (raw) {
+            try {
+              const parsed = JSON.parse(raw)
+              if (parsed && typeof parsed === 'object') {
+                const nombre = parsed.nombre || parsed.username || parsed.email || parsed.user || parsed.name
+                if (nombre) return String(nombre)
+              }
+            } catch {
+              if (raw.length < 50 && !raw.includes('eyJ') && !raw.includes('.')) {
+                return raw
+              }
+            }
+          }
+        }
+      }
+    } catch (e) {
+      console.error("Error leyendo operario:", e)
+    }
+    return 'Operario Desconocido'
+  }
+
+  // Obtiene el ID numérico del trabajador para evitar errores de clave ajena
+  const obtenerIdTrabajador = () => {
+    try {
+      const storages = [window.localStorage, window.sessionStorage]
+      for (const storage of storages) {
+        if (!storage) continue
+        const keys = ['carrybot_session', 'user', 'usuario', 'session', 'login', 'userData']
+        for (const key of keys) {
+          const raw = storage.getItem(key)
+          if (raw) {
+            try {
+              const parsed = JSON.parse(raw)
+              if (parsed && parsed.id) {
+                return parseInt(parsed.id)
+              }
+            } catch { /* ignorar */ }
+          }
+        }
+        
+        for (let i = 0; i < storage.length; i++) {
+          const key = storage.key(i)
+          const raw = storage.getItem(key)
+          if (raw) {
+            try {
+              const parsed = JSON.parse(raw)
+              if (parsed && parsed.id) return parseInt(parsed.id)
+            } catch { /* ignorar */ }
+          }
+        }
+      }
+    } catch (e) {
+      console.error("Error obteniendo ID de trabajador:", e)
+    }
+    return null
+  }
+
+  const [form, setForm] = useState({
+    operario: obtenerNombreOperario(),
+    robotId: '',
+    tipo: 'Navegación',
+    descripcion: '',
+  })
 
   useEffect(() => {
     const styleEl = document.createElement('style')
     styleEl.textContent = GLOBAL_CSS
     document.head.appendChild(styleEl)
+
+    console.log("🔍 --- DIAGNÓSTICO DE SESIÓN CARRYBOT ---")
+    console.log("👤 Nombre leído:", obtenerNombreOperario())
+    console.log("🆔 ID de Trabajador leído:", obtenerIdTrabajador())
+    console.log("-----------------------------------------")
+
+    // Obtener los robots para el select dinámico
+    fetch('http://localhost:8000/robots/')
+      .then((res) => {
+        if (!res.ok) throw new Error("No se pudo obtener la flota")
+        return res.json()
+      })
+      .then((data) => setListaRobots(data))
+      .catch((err) => {
+        console.error("Error cargando los robots de XAMPP, usando fallback de simulación:", err)
+        // Fallback local en caso de que XAMPP no esté corriendo durante la visualización
+        setListaRobots([
+          { id: 1, codigo: 'CB-01', modelo: 'Turtlebot Burger (Simulado)' },
+          { id: 2, codigo: 'CB-02', modelo: 'Carrybot Real' }
+        ])
+      })
+
     return () => document.head.removeChild(styleEl)
   }, [])
 
@@ -69,24 +240,69 @@ export default function FormularioIncidencias({ onLogout }) {
   const handleSubmit = (event) => {
     event.preventDefault()
     
-    const incidenciasGuardadas = JSON.parse(localStorage.getItem('carrybot_incidencias')) || []
-    const nuevaIncidencia = { 
-      ...form, 
-      id: crypto.randomUUID(), 
-      fecha: new Date().toISOString() 
-    }
-    
-    incidenciasGuardadas.push(nuevaIncidencia)
-    localStorage.setItem('carrybot_incidencias', JSON.stringify(incidenciasGuardadas))
+    // PAYLOAD INDESTRUCTIBLE DOBLE: Envía ambos formatos para ser 100% compatible
+    // con el backend unificado antiguo o con el backend adaptado nuevo.
+    const payload = {
+      // 1. Campos requeridos por el validador antiguo de FastAPI:
+      robot_id: form.robotId ? parseInt(form.robotId) : null,
+      descripcion: form.descripcion,
+      gravedad: form.tipo === 'Colisión' || form.tipo === 'Hardware' ? 'alta' : 'media',
+      operario: form.operario,
 
-    alert('¡Incidencia registrada con éxito en el sistema local!')
-    setForm(initialValues) 
+      // 2. Campos requeridos por el validador optimizado de tu base de datos phpMyAdmin:
+      id_trabajador: obtenerIdTrabajador(),
+      id_robot: form.robotId ? parseInt(form.robotId) : null,
+      asunto: `Fallo [${form.tipo.toUpperCase()}]`,
+      cuerpo: form.descripcion
+    }
+
+    fetch('http://localhost:8000/incidencias/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    })
+      .then(async (res) => {
+        if (!res.ok) {
+          const errorData = await res.json().catch(() => ({}));
+          let mensajeError = `Error en servidor (Código ${res.status})`;
+          
+          if (errorData && errorData.detail) {
+            if (Array.isArray(errorData.detail)) {
+              mensajeError = "Campos incompatibles entre Web y Backend (Error 422):\n" + 
+                errorData.detail.map(err => {
+                  const campo = err.loc ? err.loc.slice(1).join('.') : 'campo';
+                  return `- Campo "${campo}": ${err.msg}`;
+                }).join('\n');
+            } else if (typeof errorData.detail === 'string') {
+              mensajeError = errorData.detail;
+            } else {
+              mensajeError = JSON.stringify(errorData.detail);
+            }
+          }
+          throw new Error(mensajeError);
+        }
+        return res.json()
+      })
+      .then((data) => {
+        if (data.ok) {
+          alert('¡Incidencia registrada correctamente en la base de datos de XAMPP!')
+          setForm({
+            ...form,
+            robotId: '',
+            tipo: 'Navegación',
+            descripcion: '',
+          })
+        }
+      })
+      .catch((err) => {
+        console.error("Fallo al enviar:", err)
+        alert(`❌ Error al guardar la incidencia:\n${err.message}`)
+      })
   }
 
   return (
     <div className="cb-page">
-      {/* Nuevo Menú Unificado (Variante Trabajador) */}
-      <Navbar variant="trabajador" onLogout={onLogout} />
+      <LocalNavbar onLogout={onLogout} />
 
       <button className="cb-back" onClick={() => navigate(-1)}>
         ‹ Volver
@@ -98,24 +314,32 @@ export default function FormularioIncidencias({ onLogout }) {
 
           <form className="cb-card-body" onSubmit={handleSubmit}>
             
+            <label className="form-label-incidencia">👤 Operario Identificado</label>
             <input
               className="cb-conn-input"
               type="text"
-              placeholder="👤  Nombre del operario"
               value={form.operario}
-              onChange={(e) => updateField('operario', e.target.value)}
+              readOnly
               required
+              style={{ backgroundColor: '#e9ecef', cursor: 'not-allowed', color: '#6c757d' }}
             />
 
-            <input
+            <label className="form-label-incidencia">🤖 Seleccionar Robot Implicado</label>
+            <select
               className="cb-conn-input"
-              type="text"
-              placeholder="🤖  ID del Robot implicado (ej. Carrybot-01)"
               value={form.robotId}
               onChange={(e) => updateField('robotId', e.target.value)}
               required
-            />
+            >
+              <option value="">-- Elige un robot de la flota --</option>
+              {listaRobots.map((robot) => (
+                <option key={robot.id} value={robot.id}>
+                  {robot.codigo || `CB-0${robot.id}`} [{robot.modelo || 'Carrybot'}]
+                </option>
+              ))}
+            </select>
 
+            <label className="form-label-incidencia">🧭 Tipo de Incidencia</label>
             <select 
               className="cb-conn-input" 
               value={form.tipo}
@@ -128,15 +352,16 @@ export default function FormularioIncidencias({ onLogout }) {
               <option value="Otro">❓ Otro</option>
             </select>
 
+            <label className="form-label-incidencia">📝 Detalles de la avería</label>
             <textarea
               className="cb-conn-input"
-              placeholder="📝  Descripción detallada de la incidencia..."
+              placeholder="Describa con precisión qué error muestra el terminal de ROS2 o qué comportamiento físico extraño ha tenido el Carrybot..."
               value={form.descripcion}
               onChange={(e) => updateField('descripcion', e.target.value)}
               required
             />
 
-            <button type="submit" className="cb-btn cb-btn-yellow">
+            <button type="submit" className="cb-btn cb-btn-yellow" style={{ marginTop: '10px' }}>
               REGISTRAR INCIDENCIA
             </button>
 
