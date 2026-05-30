@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import Navbar from '../components/Navbar' // Importación del menú unificado
+import Navbar from '../components/Navbar' 
+import logoImg from "../assets/logo.png"
 
 const C = {
   navy: '#1a2d5a',
@@ -81,16 +82,43 @@ const GLOBAL_CSS = `
 
   /* Footer */
   .cb-footer {
-    background: ${C.navy}; color: rgba(255,255,255,.7);
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 14px 28px; font-size: 13px; margin-top: auto;
-  }
-  .cb-footer-logo { 
-    font-family: 'Barlow Condensed', sans-serif; 
-    font-weight: 700; font-size: 18px; color: ${C.white}; 
-  }
-  .cb-footer-logo span { color: ${C.yellow}; }
-  .cb-footer-icons { display: flex; gap: 14px; font-size: 18px; }
+  background: #1a2d5a; /* Tu azul corporativo */
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 15px 40px;
+  margin-top: auto; /* Empuja el footer siempre abajo del todo */
+}
+
+.cb-footer-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px; /* Espacio entre el robot y el texto */
+}
+
+.cb-footer-logo-img {
+  height: 30px; /* Un poco más pequeño que en el Navbar para que sea sutil */
+  width: auto;
+  object-fit: contain;
+  display: block;
+}
+
+.cb-footer-logo-text {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 700;
+  font-size: 20px;
+  color: white;
+}
+
+.cb-footer-logo-text span {
+  color: #f5c518; /* El color amarillo para "bot" */
+}
+
+.cb-footer-copy {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.8); /* Un blanco ligeramente transparente para que no resalte tanto */
+}
 `
 
 export default function UserManagement({ user, onLogout }) {
@@ -232,15 +260,20 @@ export default function UserManagement({ user, onLogout }) {
         </div>
       )}
 
-      <footer className="cb-footer">
-        <div>
-          <span className="cb-footer-logo">Carry<span>bot</span></span>
-          <span style={{ marginLeft: 8 }}>© Copyright Carrybot</span>
-        </div>
-        <div className="cb-footer-icons">
-          <span>🐦</span> <span>📸</span> <span>📘</span>
-        </div>
-      </footer>
+	<footer className="cb-footer">
+	  <div className="cb-footer-brand">
+	   
+	    <img 
+	      src={logoImg} 
+	      alt="Logo" 
+	      className="cb-footer-logo-img" 
+	    />
+	    <span className="cb-footer-logo-text">Carry<span>bot</span></span>
+	  </div>
+	  <div className="cb-footer-copy">
+	    © Copyright Carrybot
+	  </div>
+	</footer>
     </div>
   )
 }

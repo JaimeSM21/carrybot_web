@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import Navbar from '../components/Navbar' // Importación del menú unificado
+import Navbar from '../components/Navbar' 
+import logoImg from "../assets/logo.png"
 
 const C = {
   navy: '#1a2d5a',     // Azul marino
@@ -48,9 +49,44 @@ const GLOBAL_CSS = `
   .cb-btn-main:active { transform: scale(0.98); }
   .cb-btn-outline { background: white; border: 2px solid ${C.navy}; color: ${C.navy}; padding: 10px; border-radius: 8px; font-weight: 700; cursor: pointer; text-transform: uppercase; width: 100%; }
 
-  .cb-footer { background: ${C.navy}; padding: 30px 40px; margin-top: 50px; }
-  .cb-footer-content { display: flex; align-items: center; gap: 15px; color: #8892b0; font-size: 14px; }
-  .cb-footer-logo-img { height: 35px; width: auto; opacity: 0.7; }
+ .cb-footer {
+  background: #1a2d5a; /* Tu azul corporativo */
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 15px 40px;
+  margin-top: auto; /* Truco para que el footer se quede siempre abajo */
+}
+
+.cb-footer-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px; /* Espacio entre el robot y el texto */
+}
+
+.cb-footer-logo-img {
+  height: 30px; /* Tamaño ideal para el pie de página */
+  width: auto;
+  object-fit: contain;
+  display: block;
+}
+
+.cb-footer-logo-text {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 700;
+  font-size: 20px;
+  color: white;
+}
+
+.cb-footer-logo-text span {
+  color: #f5c518; /* El color amarillo corporativo para "bot" */
+}
+
+.cb-footer-copy {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.8); /* Blanco suave para el copyright */
+}
 `
 
 export default function RobotList({ user, onLogout }) {
@@ -152,14 +188,18 @@ export default function RobotList({ user, onLogout }) {
       </div>
 
       <footer className="cb-footer">
-        <div className="cb-footer-content">
-          <div style={{ fontSize: '20px', color: 'white', fontWeight: 700, display: 'flex', alignItems: 'center' }}>
-            <div style={{ marginRight: 8 }}>🤖</div>
-            <span>Carrybot</span>
-          </div>
-          <span style={{ marginLeft: '15px', color: '#8892b0' }}>© Copyright Carrybot</span>
-        </div>
-      </footer>
+	  <div className="cb-footer-brand">
+	    <img 
+	      src={logoImg} 
+	      alt="Logo" 
+	      className="cb-footer-logo-img" 
+	    />
+	    <span className="cb-footer-logo-text">Carry<span>bot</span></span>
+	  </div>
+	  <div className="cb-footer-copy">
+	    © Copyright Carrybot
+	  </div>
+	</footer>
     </div>
   )
 }
