@@ -18,6 +18,23 @@ def listar_alertas():
             r.codigo AS robot_codigo,
             u.nombre AS trabajador,
             a.descripcion,
+            a.estado
+        FROM alertas a
+        JOIN robots r ON a.id_robot = r.id
+        JOIN usuarios u ON a.id_trabajador = u.id
+        ORDER BY a.fecha_creacion DESC
+    """)
+
+@router.get("/usuario/{trabajador_id}")
+def listar_alertas_usuario(trabajador_id: int):
+    return fetch_query("""
+        SELECT
+            a.id,
+            DATE_FORMAT(a.fecha_creacion, '%d %M %Y') AS fecha,
+            DATE_FORMAT(a.fecha_creacion, '%H:%i') AS hora,
+            a.id_robot,
+            r.codigo AS robot_codigo,
+            a.descripcion,
             CASE
                 WHEN a.estado = 'pendiente' THEN 'Pendiente'
                 WHEN a.estado = 'atendida' THEN 'Atendida'
@@ -26,9 +43,9 @@ def listar_alertas():
             END AS estado
         FROM alertas a
         JOIN robots r ON a.id_robot = r.id
-        JOIN usuarios u ON a.id_trabajador = u.id
+        WHERE a.id_trabajador = %s
         ORDER BY a.fecha_creacion DESC
-    """)
+    """, (trabajador_id,))
 
 @router.put("/{id}/estado")
 def cambiar_estado(id: int, data: EstadoUpdate):

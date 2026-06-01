@@ -153,11 +153,14 @@ export default function RegistroAlertas({ user, onLogout }) {
   }, [])
 
   useEffect(() => {
-    fetch('http://localhost:8000/alertas/')
+    if (!user?.id) return
+    
+    fetch(`http://localhost:8000/alertas/usuario/${user.id}`)
       .then(res => res.json())
       .then(data => setAlertas(data))
-      .catch(() => {})
-  }, [])
+      .catch(console.error)
+    
+  }, [user])
 
   const cambiarEstado = (id, nuevoEstado) => {
     setAlertas(actuales =>
@@ -200,7 +203,6 @@ export default function RegistroAlertas({ user, onLogout }) {
                   <th>Fecha</th>
                   <th>Hora</th>
                   <th>Id_robot</th>
-                  <th>Trabajador</th>
                   <th>Descripcion</th>
                   <th>Estado</th>
                 </tr>
@@ -212,7 +214,6 @@ export default function RegistroAlertas({ user, onLogout }) {
                     <td>{alerta.fecha}</td>
                     <td>{alerta.hora}</td>
                     <td>{alerta.robot_codigo || alerta.id_robot}</td>
-                    <td>{alerta.trabajador}</td>
                     <td>{alerta.descripcion}</td>
                     <td>
                       <select
