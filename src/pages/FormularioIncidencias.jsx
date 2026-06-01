@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import Navbar from '../components/Navbar' 
 import logoImg from "../assets/logo.png";
 
+// Paleta de colores y tokens de diseño corporativos
 const C = {
   navy: '#1a2d5a',
   yellow: '#f5c518',
@@ -83,21 +84,117 @@ const GLOBAL_CSS = `
 }
 `
 
-const initialValues = {
-  operario: '',
-  robotId: '',
-  tipo: 'Navegación',
-  descripcion: '',
-}
-
+// EXPORTACIÓN POR DEFECTO RESTAURADA: Soluciona el error SyntaxError de Vite
 export default function FormularioIncidencias({ onLogout }) {
   const navigate = useNavigate()
-  const [form, setForm] = useState(initialValues)
+  const [listaRobots, setListaRobots] = useState([])
+
+  // Buscador inteligente de sesión de usuario activa
+  const obtenerNombreOperario = () => {
+    try {
+      const storages = [window.localStorage, window.sessionStorage]
+      for (const storage of storages) {
+        if (!storage) continue
+        const keys = ['carrybot_session', 'user', 'usuario', 'session', 'login', 'userData']
+        for (const key of keys) {
+          const raw = storage.getItem(key)
+          if (raw) {
+            try {
+              const parsed = JSON.parse(raw)
+              if (parsed && typeof parsed === 'object') {
+                const nombre = parsed.nombre || parsed.username || parsed.email || parsed.user || parsed.name
+                if (nombre) return String(nombre)
+              }
+            } catch {
+              if (raw.length < 50 && !raw.includes('eyJ') && !raw.includes('.')) {
+                return raw
+              }
+            }
+          }
+        }
+      }
+    } catch (e) {
+      console.error("Error leyendo operario:", e)
+    }
+    return 'Operario Desconocido'
+  }
+
+  // Obtiene el ID numérico del trabajador para evitar errores de clave ajena
+  const obtenerIdTrabajador = () => {
+    try {
+      const storages = [window.localStorage, window.sessionStorage]
+      for (const storage of storages) {
+        if (!storage) continue
+        const keys = ['carrybot_session', 'user', 'usuario', 'session', 'login', 'userData']
+        for (const key of keys) {
+          const raw = storage.getItem(key)
+          if (raw) {
+            try {
+              const parsed = JSON.parse(raw)
+              if (parsed && parsed.id) {
+                return parseInt(parsed.id)
+              }
+            } catch { /* ignorar */ }
+          }
+        }
+        
+        for (let i = 0; i < storage.length; i++) {
+          const key = storage.key(i)
+          const raw = storage.getItem(key)
+          if (raw) {
+            try {
+              const parsed = JSON.parse(raw)
+              if (parsed && parsed.id) return parseInt(parsed.id)
+            } catch { /* ignorar */ }
+          }
+        }
+      }
+    } catch (e) {
+      console.error("Error obteniendo ID de trabajador:", e)
+    }
+    return null
+  }
+
+  const [form, setForm] = useState({
+    operario: obtenerNombreOperario(),
+    robotId: '',
+    tipo: 'Navegación',
+    descripcion: '',
+  })
 
   useEffect(() => {
     const styleEl = document.createElement('style')
     styleEl.textContent = GLOBAL_CSS
     document.head.appendChild(styleEl)
+
+    const idTrabajador = obtenerIdTrabajador();
+
+    console.log("🔍 --- DIAGNÓSTICO DE SESIÓN CARRYBOT ---")
+    console.log("👤 Nombre leído:", obtenerNombreOperario())
+    console.log("🆔 ID de Trabajador leído:", obtenerIdTrabajador())
+    console.log("-----------------------------------------")
+
+    // CONEXIÓN AL NUEVO ENDPOINT FILTRADO:
+    // Si tenemos el ID del trabajador, llamamos a la ruta relacional que acabas de modificar.
+    // Si no lo tenemos, usamos el listado completo como fallback de seguridad.
+    const fetchUrl = idTrabajador 
+      ? `http://localhost:8000/incidencias/robots-asignados/${idTrabajador}`
+      : 'http://localhost:8000/robots/';
+
+    fetch(fetchUrl)
+      .then((res) => {
+        if (!res.ok) throw new Error("No se pudo obtener la flota de robots")
+        return res.json()
+      })
+      .then((data) => setListaRobots(data))
+      .catch((err) => {
+        console.error("Error cargando los robots asignados de XAMPP, usando fallback de simulación:", err)
+        setListaRobots([
+          { id: 1, codigo: 'CB-01', modelo: 'Turtlebot Burger (Simulado)' },
+          { id: 2, codigo: 'CB-02', modelo: 'Carrybot Real' }
+        ])
+      })
+
     return () => document.head.removeChild(styleEl)
   }, [])
 
@@ -107,24 +204,69 @@ export default function FormularioIncidencias({ onLogout }) {
 
   const handleSubmit = (event) => {
     event.preventDefault()
-    
-    const incidenciasGuardadas = JSON.parse(localStorage.getItem('carrybot_incidencias')) || []
-    const nuevaIncidencia = { 
-      ...form, 
-      id: crypto.randomUUID(), 
-      fecha: new Date().toISOString() 
-    }
-    
-    incidenciasGuardadas.push(nuevaIncidencia)
-    localStorage.setItem('carrybot_incidencias', JSON.stringify(incidenciasGuardadas))
 
-    alert('¡Incidencia registrada con éxito en el sistema local!')
-    setForm(initialValues) 
+    const idTrabajador = obtenerIdTrabajador()
+
+    
+    const payload = {
+      robot_id: form.robotId ? parseInt(form.robotId) : null,
+      descripcion: form.descripcion,
+      gravedad: form.tipo === 'Colisión' || form.tipo === 'Hardware' ? 'alta' : 'media',
+      operario: form.operario,
+
+      id_trabajador: idTrabajador && !isNaN(idTrabajador) ? idTrabajador : 1,
+      id_robot: form.robotId ? parseInt(form.robotId) : null,
+      asunto: `Fallo [${form.tipo.toUpperCase()}]`,
+      cuerpo: form.descripcion
+    }
+
+    fetch('http://localhost:8000/incidencias/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    })
+      .then(async (res) => {
+        if (!res.ok) {
+          const errorData = await res.json().catch(() => ({}));
+          let mensajeError = `Error en servidor (Código ${res.status})`;
+          
+          if (errorData && errorData.detail) {
+            if (Array.isArray(errorData.detail)) {
+              mensajeError = "Campos incompatibles entre Web y Backend (Error 422):\n" + 
+                errorData.detail.map(err => {
+                  const campo = err.loc ? err.loc.slice(1).join('.') : 'campo';
+                  return `- Campo "${campo}": ${err.msg}`;
+                }).join('\n');
+            } else if (typeof errorData.detail === 'string') {
+              mensajeError = errorData.detail;
+            } else {
+              mensajeError = JSON.stringify(errorData.detail);
+            }
+          }
+          throw new Error(mensajeError);
+        }
+        return res.json()
+      })
+      .then((data) => {
+        if (data.ok) {
+          alert('¡Incidencia registrada correctamente!')
+          setForm({
+            ...form,
+            robotId: '',
+            tipo: 'Navegación',
+            descripcion: '',
+          })
+        }
+      })
+      .catch((err) => {
+        console.error("Fallo al enviar:", err)
+        alert(`❌ Error al guardar la incidencia:\n${err.message}`)
+      })
   }
 
   return (
     <div className="cb-page">
-      {/* Nuevo Menú Unificado (Variante Trabajador) */}
+      
       <Navbar variant="trabajador" onLogout={onLogout} />
 
       <button className="cb-back" onClick={() => navigate(-1)}>
@@ -137,24 +279,32 @@ export default function FormularioIncidencias({ onLogout }) {
 
           <form className="cb-card-body" onSubmit={handleSubmit}>
             
+            <label className="form-label-incidencia">👤 Operario Identificado</label>
             <input
               className="cb-conn-input"
               type="text"
-              placeholder="👤  Nombre del operario"
               value={form.operario}
-              onChange={(e) => updateField('operario', e.target.value)}
+              readOnly
               required
+              style={{ backgroundColor: '#e9ecef', cursor: 'not-allowed', color: '#6c757d' }}
             />
 
-            <input
+            <label className="form-label-incidencia">🤖 Seleccionar Robot Implicado</label>
+            <select
               className="cb-conn-input"
-              type="text"
-              placeholder="🤖  ID del Robot implicado (ej. Carrybot-01)"
               value={form.robotId}
               onChange={(e) => updateField('robotId', e.target.value)}
               required
-            />
+            >
+              <option value="">-- Elige un robot de la flota --</option>
+              {listaRobots.map((robot) => (
+                <option key={robot.id} value={robot.id}>
+                  {robot.codigo || `CB-0${robot.id}`} [{robot.modelo || 'Carrybot'}]
+                </option>
+              ))}
+            </select>
 
+            <label className="form-label-incidencia">🧭 Tipo de Incidencia</label>
             <select 
               className="cb-conn-input" 
               value={form.tipo}
@@ -167,15 +317,16 @@ export default function FormularioIncidencias({ onLogout }) {
               <option value="Otro">❓ Otro</option>
             </select>
 
+            <label className="form-label-incidencia">📝 Detalles de la avería</label>
             <textarea
               className="cb-conn-input"
-              placeholder="📝  Descripción detallada de la incidencia..."
+              placeholder="Describa con precisión qué error muestra el terminal de ROS2 o qué comportamiento físico extraño ha tenido el Carrybot..."
               value={form.descripcion}
               onChange={(e) => updateField('descripcion', e.target.value)}
               required
             />
 
-            <button type="submit" className="cb-btn cb-btn-yellow">
+            <button type="submit" className="cb-btn cb-btn-yellow" style={{ marginTop: '10px' }}>
               REGISTRAR INCIDENCIA
             </button>
 
