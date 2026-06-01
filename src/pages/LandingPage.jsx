@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import Navbar from '../components/Navbar'; // Importamos el nuevo menú unificado
+import Navbar from '../components/Navbar'; 
+import logoImg from "../assets/logo.png";
 
 const CSS = `
 @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800&family=Barlow:wght@400;500;600&display=swap');
@@ -242,24 +243,44 @@ const CSS = `
 }
 
 /* FOOTER */
-.lp-footer {
-  background: #1a2d5a;
-  color: rgba(255,255,255,.7);
+.cb-footer {
+  background: #1a2d5a; /* Tu azul corporativo */
+  color: #ffffff;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 18px 40px;
-  margin-top: auto;
+  padding: 15px 40px;
+  margin-top: auto; /* Truco para que el footer se quede siempre abajo */
 }
-.lp-footer-logo {
+
+.cb-footer-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px; /* Espacio entre el robot y el texto */
+}
+
+.cb-footer-logo-img {
+  height: 30px; /* Tamaño ideal para el pie de página */
+  width: auto;
+  object-fit: contain;
+  display: block;
+}
+
+.cb-footer-logo-text {
   font-family: 'Barlow Condensed', sans-serif;
-  font-weight: 800;
+  font-weight: 700;
   font-size: 20px;
-  color: #fff;
+  color: white;
 }
-.lp-footer-logo span { color: #f5c518; }
-.lp-footer-copy { font-size: 13px; }
-.lp-footer-icons { display: flex; gap: 16px; font-size: 20px; cursor: pointer; }
+
+.cb-footer-logo-text span {
+  color: #f5c518; /* El color amarillo corporativo para "bot" */
+}
+
+.cb-footer-copy {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.8); /* Blanco suave para el copyright */
+}
 
 /* ANIMATIONS */
 .lp-fade-in {
@@ -381,17 +402,19 @@ export default function LandingPage() {
       </section>
 
       {/* FOOTER */}
-      <footer className="lp-footer">
-        <div>
-          <div className="lp-footer-logo">Carry<span>bot</span></div>
-          <div className="lp-footer-copy">© Copyright Carrybot</div>
-        </div>
-        <div className="lp-footer-icons">
-          <span title="Twitter">🐦</span>
-          <span title="Instagram">📸</span>
-          <span title="Facebook">📘</span>
-        </div>
-      </footer>
+      <footer className="cb-footer">
+	  <div className="cb-footer-brand">
+	    <img 
+	      src={logoImg} 
+	      alt="Logo" 
+	      className="cb-footer-logo-img" 
+	    />
+	    <span className="cb-footer-logo-text">Carry<span>bot</span></span>
+	  </div>
+	  <div className="cb-footer-copy">
+	    © Copyright Carrybot
+	  </div>
+	</footer>
 
     </div>
   );

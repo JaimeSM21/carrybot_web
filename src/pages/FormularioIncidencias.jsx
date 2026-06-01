@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import Navbar from '../components/Navbar' 
+import logoImg from "../assets/logo.png";
 
 // Paleta de colores y tokens de diseño corporativos
 const C = {
@@ -15,7 +17,7 @@ const C = {
   cardBg: '#ffffff',
 }
 
-// Estilos globales e interactivos de la aplicación
+
 const GLOBAL_CSS = `
   @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap');
 
@@ -97,13 +99,44 @@ const GLOBAL_CSS = `
   .cb-btn { padding: 14px 18px; border-radius: 10px; cursor: pointer; font-family: 'Barlow', sans-serif; font-size: 16px; font-weight: 700; border: none; transition: all .15s; text-transform: uppercase; letter-spacing: .3px; }
   .cb-btn-yellow { background: ${C.yellow}; color: ${C.navy}; }
   .cb-btn-yellow:hover { background: #e0b310; }
+  .cb-footer {
+  background: #1a2d5a; /* Tu azul corporativo */
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 15px 40px;
+  margin-top: auto; /* Truco para que el footer se quede siempre abajo */
+}
 
-  .form-label-incidencia { font-size: 14px; font-weight: 700; color: ${C.navy}; margin-bottom: -4px; text-transform: uppercase; letter-spacing: .3px;}
+.cb-footer-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px; /* Espacio entre el robot y el texto */
+}
 
-  /* Footer */
-  .cb-footer { background: #111e3d; color: white; padding: 20px 30px; display: flex; justify-content: space-between; align-items: center; margin-top: auto; }
-  .cb-footer-logo { font-weight: 700; }
-  .cb-footer-logo span { color: ${C.yellow}; }
+.cb-footer-logo-img {
+  height: 30px; /* Tamaño ideal para el pie de página */
+  width: auto;
+  object-fit: contain;
+  display: block;
+}
+
+.cb-footer-logo-text {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 700;
+  font-size: 20px;
+  color: white;
+}
+
+.cb-footer-logo-text span {
+  color: #f5c518; /* El color amarillo corporativo para "bot" */
+}
+
+.cb-footer-copy {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.8); /* Blanco suave para el copyright */
+}
 `
 
 // Componente Navbar local para evitar el error de archivo no encontrado
@@ -370,14 +403,18 @@ export default function FormularioIncidencias({ onLogout }) {
       </div>
 
       <footer className="cb-footer">
-        <div>
-          <span className="cb-footer-logo">Carry<span>bot</span></span>
-          <span style={{ marginLeft: 8 }}>© Copyright Carrybot</span>
-        </div>
-        <div className="cb-footer-icons">
-          <span>🐦</span> <span>📸</span> <span>📘</span>
-        </div>
-      </footer>
+	  <div className="cb-footer-brand">
+	    <img 
+	      src={logoImg} 
+	      alt="Logo" 
+	      className="cb-footer-logo-img" 
+	    />
+	    <span className="cb-footer-logo-text">Carry<span>bot</span></span>
+	  </div>
+	  <div className="cb-footer-copy">
+	    © Copyright Carrybot
+	  </div>
+	</footer>
     </div>
   )
 }
