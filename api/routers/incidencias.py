@@ -35,6 +35,44 @@ def listar_incidencias():
     """)
 
 
+
+@router.get("/robots-asignados/{id_trabajador}")
+def listar_robots_asignados(id_trabajador: int):
+    """
+    Oñembovo umi robot mba'apohára rembiapo rupive:
+    - SÃMBYHYHÁRAramo: Ohechauka opaite robot oĩva.
+    - MBA'APOHÁRAramo: Ohechauka umi robot oñeme'ẽvante chupe.
+    """
+    try:
+        # 1. Jaheka puruhára reko 'usuarios' rypy'ũme phpMyAdmin-pe
+        usuario = fetch_query("SELECT tipo FROM usuarios WHERE id = %s", (id_trabajador,))
+        
+        rol = None
+        if usuario:
+            fila = usuario[0]
+            rol = fila.get('tipo') if isinstance(fila, dict) else fila[0]
+
+        # 2. Tapicha reko ñemyatyrõ
+        if rol == 'administrador':
+            # Sãmbyhyhára ikatu ohecha opaite robot oĩva
+            print(f"👤 Puruhára {id_trabajador} ha'e SÃMBYHYHÁRA. Oñemboaje opaite robot.")
+            return fetch_query("SELECT id, codigo, modelo, estado FROM robots")
+        else:
+            # Mba'apohára ohecha umi robot oñeme'ẽvante chupe
+            print(f"👤 Puruhára {id_trabajador} ha'e MBA'APOHÁRA. Oñembovo hembiapo rupive.")
+            return fetch_query("""
+                SELECT r.id, r.codigo, r.modelo, r.estado 
+                FROM robots r
+                INNER JOIN trabajador_robot tr ON r.id = tr.id_robot
+                WHERE tr.id_trabajador = %s
+            """, (id_trabajador,))
+            
+    except Exception as e:
+        print(f"❌ Javy robot ñembovope mba'apohára rupive: {e}")
+        # Tapapeguã ñeñangareko: ohechauka robot oĩva javy oikoramo
+        return fetch_query("SELECT id, codigo, modelo, estado FROM robots")
+
+
 @router.post("/")
 def crear_incidencia(incidencia: IncidenciaCrear):
     # 🕵️ TRUCO DE DEPURACIÓN: Esto imprimirá en tu terminal negra de Windows lo que está llegando de React
@@ -57,7 +95,7 @@ def crear_incidencia(incidencia: IncidenciaCrear):
             else:
                 id_usuario_final = 1 # Fallback extremo
 
-        # 2. RESOLVER EL ADMINISTRADOR (Evita el fallo de clave foránea 'incidencias_ibfk_2' 🌟)
+        # 2. RESOLVER EL ADMINISTRADOR (Evita el fallo de clave foránea 'incidencias_ibfk_2' )
         id_admin_final = None
         # Buscamos un administrador real en la tabla usuarios de phpMyAdmin
         admins = fetch_query("SELECT id FROM usuarios WHERE tipo = 'administrador' LIMIT 1")

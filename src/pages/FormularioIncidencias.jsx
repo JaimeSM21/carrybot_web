@@ -82,27 +82,6 @@ const GLOBAL_CSS = `
     color: rgba(255, 255, 255, 0.8); /* Blanco suave para el copyright */
   }
 `
-  
-
-// Componente Navbar local para evitar el error de archivo no encontrado
-function LocalNavbar({ onLogout }) {
-  return (
-    <nav className="cb-navbar">
-      <div className="cb-logo">
-        <span style={{ marginRight: '8px' }}>🤖</span>
-        Carry<span>bot</span>
-      </div>
-      <div className="cb-nav-links">
-        <button className="cb-nav-item">Inicio</button>
-        <button className="cb-nav-item">Inventario</button>
-        <button className="cb-nav-item active">Incidencias</button>
-      </div>
-      <div className="cb-nav-right">
-        <button className="cb-logout-btn" onClick={onLogout}>Cerrar Sesión</button>
-      </div>
-    </nav>
-  )
-}
 
 // EXPORTACIÓN POR DEFECTO RESTAURADA: Soluciona el error SyntaxError de Vite
 export default function FormularioIncidencias({ onLogout }) {
@@ -187,21 +166,28 @@ export default function FormularioIncidencias({ onLogout }) {
     styleEl.textContent = GLOBAL_CSS
     document.head.appendChild(styleEl)
 
+    const idTrabajador = obtenerIdTrabajador();
+
     console.log("🔍 --- DIAGNÓSTICO DE SESIÓN CARRYBOT ---")
     console.log("👤 Nombre leído:", obtenerNombreOperario())
     console.log("🆔 ID de Trabajador leído:", obtenerIdTrabajador())
     console.log("-----------------------------------------")
 
-    // Obtener los robots para el select dinámico
-    fetch('http://localhost:8000/robots/')
+    // CONEXIÓN AL NUEVO ENDPOINT FILTRADO:
+    // Si tenemos el ID del trabajador, llamamos a la ruta relacional que acabas de modificar.
+    // Si no lo tenemos, usamos el listado completo como fallback de seguridad.
+    const fetchUrl = idTrabajador 
+      ? `http://localhost:8000/incidencias/robots-asignados/${idTrabajador}`
+      : 'http://localhost:8000/robots/';
+
+    fetch(fetchUrl)
       .then((res) => {
-        if (!res.ok) throw new Error("No se pudo obtener la flota")
+        if (!res.ok) throw new Error("No se pudo obtener la flota de robots")
         return res.json()
       })
       .then((data) => setListaRobots(data))
       .catch((err) => {
-        console.error("Error cargando los robots, usando fallback de simulación:", err)
-        // Fallback local en caso de que XAMPP no esté corriendo durante la visualización
+        console.error("Error cargando los robots asignados de XAMPP, usando fallback de simulación:", err)
         setListaRobots([
           { id: 1, codigo: 'CB-01', modelo: 'Turtlebot Burger (Simulado)' },
           { id: 2, codigo: 'CB-02', modelo: 'Carrybot Real' }
@@ -217,6 +203,9 @@ export default function FormularioIncidencias({ onLogout }) {
 
   const handleSubmit = (event) => {
     event.preventDefault()
+
+    const idTrabajador = obtenerIdTrabajador()
+
     
     const payload = {
       robot_id: form.robotId ? parseInt(form.robotId) : null,
@@ -224,7 +213,7 @@ export default function FormularioIncidencias({ onLogout }) {
       gravedad: form.tipo === 'Colisión' || form.tipo === 'Hardware' ? 'alta' : 'media',
       operario: form.operario,
 
-      id_trabajador: obtenerIdTrabajador(),
+      id_trabajador: idTrabajador && !isNaN(idTrabajador) ? idTrabajador : 1,
       id_robot: form.robotId ? parseInt(form.robotId) : null,
       asunto: `Fallo [${form.tipo.toUpperCase()}]`,
       cuerpo: form.descripcion
