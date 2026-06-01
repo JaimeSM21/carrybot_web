@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Navbar from '../components/Navbar' 
-import logoImg from "../assets/logo.png";
+import logoImg from "../assets/logo.png"
 
 // Paleta de colores y tokens de diseño corporativos
 const C = {
@@ -17,70 +17,14 @@ const C = {
   cardBg: '#ffffff',
 }
 
-
 const GLOBAL_CSS = `
   @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap');
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Barlow', sans-serif; background: #f0f2f7; color: ${C.text}; }
+  body { font-family: 'Barlow', sans-serif; background: #f0f2f7; }
 
   .cb-page { min-height: 100vh; display: flex; flex-direction: column; }
 
-  /* Estilos del Navbar local autoportante */
-  .cb-navbar {
-    background: ${C.navy};
-    padding: 15px 30px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    color: white;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-  }
-  .cb-logo {
-    display: flex;
-    align-items: center;
-    font-weight: 700;
-    font-size: 24px;
-    cursor: pointer;
-  }
-  .cb-logo span { color: ${C.yellow}; }
-  .cb-nav-links {
-    display: flex;
-    gap: 20px;
-  }
-  .cb-nav-item {
-    background: none;
-    border: none;
-    color: white;
-    font-weight: 600;
-    cursor: pointer;
-    font-size: 15px;
-    text-transform: uppercase;
-    padding: 8px 12px;
-    border-radius: 6px;
-    transition: all 0.2s;
-  }
-  .cb-nav-item:hover, .cb-nav-item.active {
-    background: rgba(255, 255, 255, 0.1);
-    color: ${C.yellow};
-  }
-  .cb-nav-right {
-    display: flex;
-    gap: 15px;
-  }
-  .cb-logout-btn {
-    background: ${C.danger};
-    color: white;
-    border: none;
-    padding: 8px 16px;
-    border-radius: 6px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: opacity 0.2s;
-  }
-  .cb-logout-btn:hover { opacity: 0.9; }
-
-  /* Botón de volver */
   .cb-back { display: inline-flex; align-items: center; gap: 6px; margin: 20px 28px 8px; color: ${C.navy}; font-size: 14px; font-weight: 700; background: ${C.white}; border: 1.5px solid ${C.border}; border-radius: 10px; padding: 10px 18px; cursor: pointer; text-transform: uppercase; letter-spacing: .4px; transition: all .15s; box-shadow: 0 1px 3px rgba(15, 23, 42, .04); width: fit-content; }
   .cb-back:hover { background: ${C.navy}; color: ${C.white}; }
 
@@ -100,44 +44,45 @@ const GLOBAL_CSS = `
   .cb-btn-yellow { background: ${C.yellow}; color: ${C.navy}; }
   .cb-btn-yellow:hover { background: #e0b310; }
   .cb-footer {
-  background: #1a2d5a; /* Tu azul corporativo */
-  color: #ffffff;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 15px 40px;
-  margin-top: auto; /* Truco para que el footer se quede siempre abajo */
-}
+    background: #1a2d5a; /* Tu azul corporativo */
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 15px 40px;
+    margin-top: auto; /* Truco para que el footer se quede siempre abajo */
+  }
 
-.cb-footer-brand {
-  display: flex;
-  align-items: center;
-  gap: 10px; /* Espacio entre el robot y el texto */
-}
+  .cb-footer-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px; /* Espacio entre el robot y el texto */
+  }
 
-.cb-footer-logo-img {
-  height: 30px; /* Tamaño ideal para el pie de página */
-  width: auto;
-  object-fit: contain;
-  display: block;
-}
+  .cb-footer-logo-img {
+    height: 30px; /* Tamaño ideal para el pie de página */
+    width: auto;
+    object-fit: contain;
+    display: block;
+  }
 
-.cb-footer-logo-text {
-  font-family: 'Barlow Condensed', sans-serif;
-  font-weight: 700;
-  font-size: 20px;
-  color: white;
-}
+  .cb-footer-logo-text {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 20px;
+    color: white;
+  }
 
-.cb-footer-logo-text span {
-  color: #f5c518; /* El color amarillo corporativo para "bot" */
-}
+  .cb-footer-logo-text span {
+    color: #f5c518; /* El color amarillo corporativo para "bot" */
+  }
 
-.cb-footer-copy {
-  font-size: 13px;
-  color: rgba(255, 255, 255, 0.8); /* Blanco suave para el copyright */
-}
+  .cb-footer-copy {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.8); /* Blanco suave para el copyright */
+  }
 `
+  
 
 // Componente Navbar local para evitar el error de archivo no encontrado
 function LocalNavbar({ onLogout }) {
@@ -255,7 +200,7 @@ export default function FormularioIncidencias({ onLogout }) {
       })
       .then((data) => setListaRobots(data))
       .catch((err) => {
-        console.error("Error cargando los robots de XAMPP, usando fallback de simulación:", err)
+        console.error("Error cargando los robots, usando fallback de simulación:", err)
         // Fallback local en caso de que XAMPP no esté corriendo durante la visualización
         setListaRobots([
           { id: 1, codigo: 'CB-01', modelo: 'Turtlebot Burger (Simulado)' },
@@ -273,16 +218,12 @@ export default function FormularioIncidencias({ onLogout }) {
   const handleSubmit = (event) => {
     event.preventDefault()
     
-    // PAYLOAD INDESTRUCTIBLE DOBLE: Envía ambos formatos para ser 100% compatible
-    // con el backend unificado antiguo o con el backend adaptado nuevo.
     const payload = {
-      // 1. Campos requeridos por el validador antiguo de FastAPI:
       robot_id: form.robotId ? parseInt(form.robotId) : null,
       descripcion: form.descripcion,
       gravedad: form.tipo === 'Colisión' || form.tipo === 'Hardware' ? 'alta' : 'media',
       operario: form.operario,
 
-      // 2. Campos requeridos por el validador optimizado de tu base de datos phpMyAdmin:
       id_trabajador: obtenerIdTrabajador(),
       id_robot: form.robotId ? parseInt(form.robotId) : null,
       asunto: `Fallo [${form.tipo.toUpperCase()}]`,
@@ -318,7 +259,7 @@ export default function FormularioIncidencias({ onLogout }) {
       })
       .then((data) => {
         if (data.ok) {
-          alert('¡Incidencia registrada correctamente en la base de datos de XAMPP!')
+          alert('¡Incidencia registrada correctamente!')
           setForm({
             ...form,
             robotId: '',
@@ -335,7 +276,8 @@ export default function FormularioIncidencias({ onLogout }) {
 
   return (
     <div className="cb-page">
-      <LocalNavbar onLogout={onLogout} />
+      
+      <Navbar variant="trabajador" onLogout={onLogout} />
 
       <button className="cb-back" onClick={() => navigate(-1)}>
         ‹ Volver

@@ -88,7 +88,7 @@ def crear_incidencia(incidencia: IncidenciaCrear):
         params = (id_usuario_final, id_admin_final, id_robot_final, asunto_final, cuerpo_final, "abierta", datetime.now())
         
         execute_query(query, params)
-        print("✅ --- INSERCIÓN COMPLETADA CON ÉXITO EN XAMPP ---\n")
+        print("✅ --- INSERCIÓN COMPLETADA CON ÉXITO ---\n")
         
         return {"ok": True, "message": "Guardado correctamente"}
 
