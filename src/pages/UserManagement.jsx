@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { authHeaders } from '../utils/auth'
 import { useNavigate } from 'react-router-dom'
 import Navbar from '../components/Navbar' 
 import logoImg from "../assets/logo.png"
@@ -123,14 +124,14 @@ export default function UserManagement({ user, onLogout }) {
   const [robotsSeleccionados, setRobotsSeleccionados] = useState([]);
 
   const cargarUsuarios = () => {
-    fetch('http://localhost:8000/usuarios/')
+    fetch('http://localhost:8000/usuarios/', { headers: authHeaders() })
       .then(res => res.json())
       .then(data => setUsuarios(data))
       .catch(() => console.error("Error cargando usuarios"));
   };
 
   const cargarRobots = () => {
-    fetch('http://localhost:8000/robots/')
+    fetch('http://localhost:8000/robots/', { headers: authHeaders() })
       .then(res => res.json())
       .then(data => setRobotsDisponibles(data))
       .catch(() => console.warn("No se pudieron cargar los robots"));
@@ -160,7 +161,7 @@ export default function UserManagement({ user, onLogout }) {
       // Enviamos todo junto, incluyendo el array id_robots que espera tu nuevo Python
       const res = await fetch('http://localhost:8000/usuarios/registro', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authHeaders(),
         body: JSON.stringify({
           nombre: formData.nombre,
           email: formData.email,
@@ -187,7 +188,7 @@ export default function UserManagement({ user, onLogout }) {
     // Tu usuarios.py recibe 'id_robots' dentro del body del PUT y actualiza la tabla intermedia sola
     await fetch(`http://localhost:8000/usuarios/${selectedUser.id}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: authHeaders(),
       body: JSON.stringify({
         nombre: formData.nombre,
         email: formData.email,
@@ -201,7 +202,7 @@ export default function UserManagement({ user, onLogout }) {
   };
 
   const handleDelete = async (user) => {
-    await fetch(`http://localhost:8000/usuarios/${user.id}`, { method: 'DELETE' });
+    await fetch(`http://localhost:8000/usuarios/${user.id}`, { headers: authHeaders(), method: 'DELETE' });
     setSelectedUser(user);
     setShowDeleteSuccess(true);
     cargarUsuarios();

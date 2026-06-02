@@ -1,7 +1,6 @@
-const USERS_KEY = 'carrybot_users'
 const SESSION_KEY = 'carrybot_session'
 
-const wait = (ms = 450) => new Promise((resolve) => setTimeout(resolve, ms))
+// ── Sesión ───────────────────────────────────────────────────────────────────
 
 function readJson(key, fallback) {
   try {
@@ -16,10 +15,6 @@ function writeJson(key, value) {
   localStorage.setItem(key, JSON.stringify(value))
 }
 
-export function getUsers() {
-  return readJson(USERS_KEY, [])
-}
-
 export function getSessionUser() {
   return readJson(SESSION_KEY, null)
 }
@@ -32,37 +27,34 @@ export function logoutSession() {
   localStorage.removeItem(SESSION_KEY)
 }
 
-export async function registerUser({ name, email, password }) {
-  const response = await fetch("http://localhost:8000/usuarios/registro", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      nombre: name.trim(),
-      email: email.trim().toLowerCase(),
-      password,
-    }),
-  })
+// ── Token JWT ────────────────────────────────────────────────────────────────
 
-  const data = await response.json()
-
-  if (!response.ok) {
-    throw new Error(data.detail || "No se pudo completar el registro.")
-  }
-
-  const sessionUser = {
-    id: null,
-    name: name.trim(),
-    email: email.trim().toLowerCase(),
-  }
-
-  saveSessionUser(sessionUser)
-  return sessionUser
+/**
+ * Devuelve el token JWT guardado en la sesión, o null si no hay sesión.
+ */
+export function getToken() {
+  const session = getSessionUser()
+  return session?.token ?? null
 }
 
+/**
+ * Devuelve los headers necesarios para llamadas autenticadas a la API.
+ * Uso: fetch(url, { headers: authHeaders() })
+ */
+export function authHeaders() {
+  const token = getToken()
+  return {
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  }
+}
+
+// ── Login / Registro ─────────────────────────────────────────────────────────
+
 export async function loginUser({ email, password }) {
-  const response = await fetch("http://localhost:8000/usuarios/login", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
+  const response = await fetch('http://localhost:8000/usuarios/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       email: email.trim().toLowerCase(),
       password,
@@ -72,10 +64,12 @@ export async function loginUser({ email, password }) {
   const data = await response.json()
 
   if (!response.ok) {
-    throw new Error(data.detail || "No se pudo iniciar sesión.")
+    throw new Error(data.detail || 'No se pudo iniciar sesión.')
   }
 
+  // Guardamos el token junto con los datos del usuario
   const sessionUser = {
+    token: data.token,
     id: data.id,
     name: data.nombre,
     email: data.email,
@@ -86,19 +80,26 @@ export async function loginUser({ email, password }) {
   return sessionUser
 }
 
-export function seedDemoUser() {
-  const users = getUsers()
-  const exists = users.some((user) => user.email === 'demo@carrybot.com')
+export async function registerUser({ name, email, password }) {
+  const response = await fetch('http://localhost:8000/usuarios/registro', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      nombre: name.trim(),
+      email: email.trim().toLowerCase(),
+      password,
+    }),
+  })
 
-  if (exists) return
+  const data = await response.json()
 
-  const demoUser = {
-    id: 'demo-carrybot-user',
-    name: 'Usuario Demo',
-    email: 'demo@carrybot.com',
-    password: 'Carrybot123',
-    createdAt: new Date().toISOString(),
+  if (!response.ok) {
+    throw new Error(data.detail || 'No se pudo completar el registro.')
   }
 
-  writeJson(USERS_KEY, [...users, demoUser])
+  // Tras el registro redirigimos al login (el registro no genera token)
+  return { id: data.id, name: name.trim(), email: email.trim().toLowerCase() }
 }
+
+// Mantener seedDemoUser vacío para no romper importaciones existentes
+export function seedDemoUser() {}

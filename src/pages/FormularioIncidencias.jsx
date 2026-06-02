@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { authHeaders } from '../utils/auth'
 import { useNavigate } from 'react-router-dom'
 import Navbar from '../components/Navbar' 
 import logoImg from "../assets/logo.png";
@@ -181,7 +182,7 @@ export default function FormularioIncidencias({ onLogout }) {
       ? `http://localhost:8000/incidencias/robots-asignados/${idTrabajador}`
       : 'http://localhost:8000/robots/';
 
-    fetch(fetchUrl)
+    fetch(fetchUrl, { headers: authHeaders() })
       .then((res) => {
         if (!res.ok) throw new Error("No se pudo obtener la flota de robots")
         return res.json()
@@ -222,7 +223,7 @@ export default function FormularioIncidencias({ onLogout }) {
 
     fetch('http://localhost:8000/incidencias/', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: authHeaders(),
       body: JSON.stringify(payload)
     })
       .then(async (res) => {

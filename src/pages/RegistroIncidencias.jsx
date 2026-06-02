@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { authHeaders } from '../utils/auth'
 import { useNavigate } from 'react-router-dom'
 import Navbar from '../components/Navbar' 
 import logoImg from "../assets/logo.png"
@@ -88,7 +89,7 @@ export default function RegistroIncidencias({ user, onLogout }) {
   }, [])
 
   useEffect(() => {
-    fetch('http://localhost:8000/incidencias/')
+    fetch('http://localhost:8000/incidencias/', { headers: authHeaders() })
       .then(res => res.json())
       .then(data => setIncidencias(data))
       .catch(err => console.error('Error cargando incidencias:', err))
@@ -103,7 +104,7 @@ export default function RegistroIncidencias({ user, onLogout }) {
 
     fetch(`http://localhost:8000/incidencias/${id}/estado`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: authHeaders(),
       body: JSON.stringify({ estado: nuevoEstado }),
     })
   }

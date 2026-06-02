@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { authHeaders } from '../utils/auth'
 import { useNavigate } from "react-router-dom";
 import { draw_occupancy_grid } from '../js/draw_occupancy_grid.js';
 import Navbar from '../components/Navbar'; 
@@ -316,7 +317,7 @@ export default function GestionRobot({ user, onLogout }) {
   }, []);
 
     useEffect(() => {
-      fetch(`http://localhost:8000/robots/${ROBOT_ID}`)
+      fetch(`http://localhost:8000/robots/${ROBOT_ID}`, { headers: authHeaders() })
         .then(res => res.json())
         .then(data => setRobotDB(data))
         .catch(() => console.warn('[CarryBot] No se pudo cargar el robot de la BD'));
@@ -328,7 +329,7 @@ export default function GestionRobot({ user, onLogout }) {
       const interval = setInterval(() => {
         fetch(`http://localhost:8000/robots/${ROBOT_ID}/pos_x/pos_y/pos_z`, {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: authHeaders(),
           body: JSON.stringify({
             x: positionRef.current.x,
             y: positionRef.current.y,
@@ -413,7 +414,7 @@ export default function GestionRobot({ user, onLogout }) {
             if (coords) {
               fetch('http://localhost:8000/tareas/', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: authHeaders(),
                 body: JSON.stringify({
                   id_robot:         ROBOT_ID,
                   destino_nombre:  dest,
@@ -813,11 +814,9 @@ export default function GestionRobot({ user, onLogout }) {
                         onClick={() => {
                                 publishCommand('/web/nav_goal', detection.qr_parsed.dest);
                                 if (tareaActual) {
-                                  fetch(`http://localhost:8000/tareas/${tareaActual}/estado?estado=en_curso`, {
-                                    method: 'PUT',
+                                  fetch(`http://localhost:8000/tareas/${tareaActual}/estado?estado=en_curso`, { headers: authHeaders(), method: 'PUT',
                                   }).catch(() => {});
-                                  fetch(`http://localhost:8000/robots/${ROBOT_ID}/estado?estado=en_tarea`, {
-                                    method: 'PUT',
+                                  fetch(`http://localhost:8000/robots/${ROBOT_ID}/estado?estado=en_tarea`, { headers: authHeaders(), method: 'PUT',
                                   }).catch(() => {});
                                 }
                               }}
@@ -879,12 +878,10 @@ export default function GestionRobot({ user, onLogout }) {
               onClick={() => {
                           publishCommand('/web/cancel', 'stop');
                           if (tareaActual) {
-                            fetch(`http://localhost:8000/tareas/${tareaActual}/estado?estado=cancelada`, {
-                              method: 'PUT',
+                            fetch(`http://localhost:8000/tareas/${tareaActual}/estado?estado=cancelada`, { headers: authHeaders(), method: 'PUT',
                             }).catch(() => {});
                             setTareaActual(null);
-                            fetch(`http://localhost:8000/robots/${ROBOT_ID}/estado?estado=activo`, {
-                              method: 'PUT',
+                            fetch(`http://localhost:8000/robots/${ROBOT_ID}/estado?estado=activo`, { headers: authHeaders(), method: 'PUT',
                             }).catch(() => {});
                           }
                         }}

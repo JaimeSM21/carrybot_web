@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { authHeaders } from '../utils/auth'
 import { useNavigate } from 'react-router-dom'
 import Navbar from '../components/Navbar' 
 import logoImg from "../assets/logo.png"
@@ -77,7 +78,7 @@ export default function RobotList({ user, onLogout }) {
     
     // Si el usuario está logueado, filtramos pidiendo solo sus robots asignados
     if (user && user.id) {
-      fetch(`http://localhost:8000/usuarios/asignados/${user.id}`)
+      fetch(`http://localhost:8000/usuarios/asignados/${user.id}`, { headers: authHeaders() })
         .then(res => res.json())
         .then(data => {
           setRobots(data)
