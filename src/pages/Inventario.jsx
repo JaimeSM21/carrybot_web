@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import Navbar from '../components/Navbar' // Importación del nuevo menú
+import Navbar from '../components/Navbar' 
+import logoImg from "../assets/logo.png"
 
 const C = {
   navy: '#1a2d5a',
@@ -46,9 +47,43 @@ const GLOBAL_CSS = `
   .cb-input { width: 100%; padding: 12px; border: 1.5px solid ${C.border}; border-radius: 8px; outline: none; font-family: 'Barlow', sans-serif; }
 
   .cb-footer {
-    background: ${C.navy}; color: white; padding: 15px 28px; 
-    display: flex; justify-content: space-between; align-items: center; font-size: 13px; margin-top: auto;
-  }
+  background: #1a2d5a; /* Tu azul corporativo */
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 15px 40px;
+  margin-top: auto; /* Truco para que el footer se quede siempre abajo */
+}
+
+.cb-footer-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px; /* Espacio entre el robot y el texto */
+}
+
+.cb-footer-logo-img {
+  height: 30px; /* Tamaño ideal para el pie de página */
+  width: auto;
+  object-fit: contain;
+  display: block;
+}
+
+.cb-footer-logo-text {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 700;
+  font-size: 20px;
+  color: white;
+}
+
+.cb-footer-logo-text span {
+  color: #f5c518; /* El color amarillo corporativo para "bot" */
+}
+
+.cb-footer-copy {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.8); /* Blanco suave para el copyright */
+}
 `
 
 export default function Inventario({ onLogout }) {
@@ -160,9 +195,18 @@ export default function Inventario({ onLogout }) {
       )}
 
       <footer className="cb-footer">
-        <div><span style={{fontWeight: 700}}>Carry<span>bot</span></span> © Copyright Carrybot</div>
-        <div style={{display: 'flex', gap: '10px'}}><span>🐦</span><span>📸</span><span>📘</span></div>
-      </footer>
+  <div className="cb-footer-brand">
+    <img 
+      src={logoImg} 
+      alt="Logo" 
+      className="cb-footer-logo-img" 
+    />
+    <span className="cb-footer-logo-text">Carry<span>bot</span></span>
+  </div>
+  <div className="cb-footer-copy">
+    © Copyright Carrybot
+  </div>
+</footer>
     </div>
   );
 }

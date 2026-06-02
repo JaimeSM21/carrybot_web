@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { loginUser } from '../utils/auth'
-import Navbar from '../components/Navbar' // Importamos el nuevo menú unificado
+import Navbar from '../components/Navbar'
+import logoImg from "../assets/logo.png"
 
 const C = {
   navy: '#1a2d5a',
@@ -125,6 +126,44 @@ const GLOBAL_CSS = `
     background: ${C.yellow};
     color: ${C.navy};
   }
+  .cb-footer {
+  background: #1a2d5a; /* Tu azul corporativo */
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 15px 40px;
+  margin-top: auto; /* Truco para que el footer se quede siempre abajo */
+}
+
+.cb-footer-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px; /* Espacio entre el robot y el texto */
+}
+
+.cb-footer-logo-img {
+  height: 30px; /* Tamaño ideal para el pie de página */
+  width: auto;
+  object-fit: contain;
+  display: block;
+}
+
+.cb-footer-logo-text {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 700;
+  font-size: 20px;
+  color: white;
+}
+
+.cb-footer-logo-text span {
+  color: #f5c518; /* El color amarillo corporativo para "bot" */
+}
+
+.cb-footer-copy {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.8); /* Blanco suave para el copyright */
+}
 `
 
 export default function Login({ onLogin }) {
@@ -187,6 +226,19 @@ const handleLogin = async (e) => {
           </form>
         </div>
       </div>
+      <footer className="cb-footer">
+  <div className="cb-footer-brand">
+    <img 
+      src={logoImg} 
+      alt="Logo" 
+      className="cb-footer-logo-img" 
+    />
+    <span className="cb-footer-logo-text">Carry<span>bot</span></span>
+  </div>
+  <div className="cb-footer-copy">
+    © Copyright Carrybot
+  </div>
+</footer>
     </div>
   )
 }

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import Navbar from '../components/Navbar' // Importación del menú unificado
+import Navbar from '../components/Navbar' 
+import logoImg from "../assets/logo.png"
 
 const C = {
   navy: '#1a2d5a',
@@ -34,10 +35,44 @@ const GLOBAL_CSS = `
   .close-btn { display: block; margin: 10px auto 0; background: ${C.yellow}; color: ${C.navy}; border: none; border-radius: 8px; padding: 8px 30px; font-weight: 700; cursor: pointer; }
   .empty { padding: 30px; text-align: center; color: ${C.muted}; }
 
-  /* Footer local para RegistroIncidencias si no se usa el global */
-  .cb-footer { background: ${C.navy}; color: rgba(255,255,255,.7); display: flex; justify-content: space-between; padding: 14px 28px; font-size: 13px; margin-top: auto; }
-  .cb-footer-logo { font-weight: 700; font-size: 18px; color: white; }
-  .cb-footer-logo span { color: ${C.yellow}; }
+.cb-footer {
+  background: #1a2d5a; /* Tu azul corporativo */
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 15px 40px;
+  margin-top: auto; /* Truco para que el footer se quede siempre abajo */
+}
+
+.cb-footer-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px; /* Espacio entre el robot y el texto */
+}
+
+.cb-footer-logo-img {
+  height: 30px; /* Tamaño ideal para el pie de página */
+  width: auto;
+  object-fit: contain;
+  display: block;
+}
+
+.cb-footer-logo-text {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 700;
+  font-size: 20px;
+  color: white;
+}
+
+.cb-footer-logo-text span {
+  color: #f5c518; /* El color amarillo corporativo para "bot" */
+}
+
+.cb-footer-copy {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.8); /* Blanco suave para el copyright */
+}
 `
 
 export default function RegistroIncidencias({ user, onLogout }) {
@@ -140,11 +175,18 @@ export default function RegistroIncidencias({ user, onLogout }) {
       </main>
 
       <footer className="cb-footer">
-        <div>
-          <span className="cb-footer-logo">Carry<span>bot</span></span>
-          <span style={{ marginLeft: 8 }}>© Copyright Carrybot</span>
-        </div>
-      </footer>
+	  <div className="cb-footer-brand">
+	    <img 
+	      src={logoImg} 
+	      alt="Logo" 
+	      className="cb-footer-logo-img" 
+	    />
+	    <span className="cb-footer-logo-text">Carry<span>bot</span></span>
+	  </div>
+	  <div className="cb-footer-copy">
+	    © Copyright Carrybot
+	  </div>
+	</footer>
     </div>
   )
 }
