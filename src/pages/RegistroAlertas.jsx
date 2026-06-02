@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { authHeaders } from '../utils/auth'
 import { useNavigate } from 'react-router-dom'
 import Navbar from '../components/Navbar'
 import logoImg from "../assets/logo.png"
@@ -155,14 +156,23 @@ export default function RegistroAlertas({ user, onLogout }) {
   useEffect(() => {
     if (!user?.id) return
     
-    fetch(`http://localhost:8000/alertas/usuario/${user.id}`)
+    fetch(`http://localhost:8000/alertas/usuario/${user.id}`, { headers: authHeaders() })
       .then(res => res.json())
       .then(data => setAlertas(data))
       .catch(console.error)
     
   }, [user])
 
+  const recargarAlertas = () => {
+    if (!user?.id) return
+    fetch(`http://localhost:8000/alertas/usuario/${user.id}`, { headers: authHeaders() })
+      .then(res => res.json())
+      .then(data => setAlertas(data))
+      .catch(console.error)
+  }
+
   const cambiarEstado = (id, nuevoEstado) => {
+    // Actualización optimista en el frontend
     setAlertas(actuales =>
       actuales.map(alerta =>
         alerta.id === id ? { ...alerta, estado: nuevoEstado } : alerta
@@ -170,9 +180,17 @@ export default function RegistroAlertas({ user, onLogout }) {
     )
     fetch(`http://localhost:8000/alertas/${id}/estado`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: authHeaders(),
       body: JSON.stringify({ estado: nuevoEstado }),
-    }).catch(() => {})
+    })
+      .then(res => {
+        if (res.ok) {
+          recargarAlertas() // Sincronizar con la BBDD tras el PUT
+        } else {
+          recargarAlertas() // Revertir si hubo error
+        }
+      })
+      .catch(() => recargarAlertas())
   }
 
   return (

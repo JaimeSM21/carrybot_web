@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { authHeaders } from '../utils/auth'
 import { useNavigate } from 'react-router-dom'
 import Navbar from '../components/Navbar' 
 import logoImg from "../assets/logo.png"
@@ -100,7 +101,7 @@ export default function Inventario({ onLogout }) {
   });
 
   const fetchInventario = () => {
-    fetch('http://localhost:8000/inventario/')
+    fetch('http://localhost:8000/inventario/', { headers: authHeaders() })
       .then(res => res.json())
       .then(data => setItems(data))
       .catch(err => console.error("Error cargando inventario:", err));
@@ -119,7 +120,7 @@ export default function Inventario({ onLogout }) {
     try {
       const response = await fetch('http://localhost:8000/inventario/add', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authHeaders(),
         body: JSON.stringify(form)
       });
       
