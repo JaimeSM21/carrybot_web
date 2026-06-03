@@ -8,7 +8,7 @@ import LandingPage from './pages/LandingPage'
 import UserManagement from './pages/UserManagement'
 import Inventario from './pages/Inventario'
 import RegistroAlertas from './pages/RegistroAlertas'
-import RegistroIncidencias from './pages/RegistroIncidencias' // <-- IMPORTANTE: Faltaba esta importación
+import RegistroIncidencias from './pages/RegistroIncidencias'
 import FormularioIncidencias from './pages/FormularioIncidencias'
 import RobotList from './pages/RobotList'
 import { getSessionUser, logoutSession, seedDemoUser } from './utils/auth'
@@ -43,7 +43,7 @@ function App() {
           element={user ? <Navigate to="/home" replace /> : <Register onLogin={handleLogin} />}
         />
 
-        {/* RUTAS PROTEGIDAS TRABAJADOR */}
+        {/* RUTAS PROTEGIDAS — cualquier usuario logueado */}
         <Route
           path="/home"
           element={
@@ -61,7 +61,7 @@ function App() {
           }
         />
         <Route
-          path="/contacto"  // Ruta que usa el trabajador para reportar
+          path="/contacto"
           element={
             <ProtectedRoute isAuthenticated={!!user}>
               <FormularioIncidencias user={user} onLogout={handleLogout} />
@@ -76,26 +76,6 @@ function App() {
             </ProtectedRoute>
           }
         />
-
-        {/* RUTAS PROTEGIDAS ADMINISTRADOR */}
-        <Route
-          path="/admin/users"
-          element={
-            <ProtectedRoute isAuthenticated={!!user}>
-              <UserManagement user={user} onLogout={handleLogout} />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/registro-incidencias"
-          element={
-            <ProtectedRoute isAuthenticated={!!user}>
-              <RegistroIncidencias user={user} onLogout={handleLogout} />
-            </ProtectedRoute>
-          }
-        />
-
-        {/* CONTROL DE ROBOT INDIVIDUAL */}
         <Route
           path="/robot/:id"
           element={
@@ -105,12 +85,29 @@ function App() {
           }
         />
 
+        {/* RUTAS PROTEGIDAS — solo administrador */}
+        <Route
+          path="/admin/users"
+          element={
+            <ProtectedRoute isAuthenticated={!!user} requiredRole="administrador" user={user}>
+              <UserManagement user={user} onLogout={handleLogout} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/registro-incidencias"
+          element={
+            <ProtectedRoute isAuthenticated={!!user} requiredRole="administrador" user={user}>
+              <RegistroIncidencias user={user} onLogout={handleLogout} />
+            </ProtectedRoute>
+          }
+        />
+
         {/* REDIRECCIÓN POR DEFECTO */}
         <Route path="*" element={<Navigate to={user ? '/home' : '/login'} replace />} />
-
       </Routes>
     </BrowserRouter>
   )
 }
 
-export default App;
+export default App

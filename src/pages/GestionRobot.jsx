@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { authHeaders } from '../utils/auth'
 import { useNavigate } from "react-router-dom";
 import { draw_occupancy_grid } from '../js/draw_occupancy_grid.js';
-import Navbar from '../components/Navbar'; // Importación del nuevo menú
+import Navbar from '../components/Navbar'; 
+import logoImg from "../assets/logo.png";
 
 // ─── Colores Carrybot ────────────────────────────────────────────────────────
 const C = {
@@ -242,7 +244,45 @@ const GLOBAL_CSS = `
     font-size: 13px; color: ${C.text}; margin-top: 8px;
     display: flex; align-items: flex-start; gap: 8px;
   }
-`;
+  .cb-footer {
+  background: #1a2d5a; /* Tu azul corporativo */
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 15px 40px;
+  margin-top: auto; /* Truco para que el footer se quede siempre abajo */
+}
+
+.cb-footer-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px; /* Espacio entre el robot y el texto */
+}
+
+.cb-footer-logo-img {
+  height: 30px; /* Tamaño ideal para el pie de página */
+  width: auto;
+  object-fit: contain;
+  display: block;
+}
+
+.cb-footer-logo-text {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 700;
+  font-size: 20px;
+  color: white;
+}
+
+.cb-footer-logo-text span {
+  color: #f5c518; /* El color amarillo corporativo para "bot" */
+}
+
+.cb-footer-copy {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.8); /* Blanco suave para el copyright */
+}
+`
 
 // ─── Componente principal ─────────────────────────────────────────────────────
 export default function GestionRobot({ user, onLogout }) {
@@ -266,8 +306,15 @@ export default function GestionRobot({ user, onLogout }) {
   const announcRef   = useRef(null);
   const mapCanvasRef = useRef(null);
   const positionRef  = useRef({ x: 0, y: 0 });
+  // IDs de paquetes ya procesados en esta sesión — useRef para evitar closure stale
+  const processedPkgIdsRef = useRef(new Set());
   const [robotDB,      setRobotDB]      = useState(null);
   const [tareaActual,  setTareaActual]  = useState(null);
+
+  const [voiceActive,     setVoiceActive]     = useState(false);
+  const [voiceTranscript, setVoiceTranscript] = useState('');
+  const [voiceStatus,     setVoiceStatus]     = useState('');
+  const recognitionRef = useRef(null);
 
   useEffect(() => {
     const el = document.createElement("style");
@@ -277,7 +324,7 @@ export default function GestionRobot({ user, onLogout }) {
   }, []);
 
     useEffect(() => {
-      fetch(`http://localhost:8000/robots/${ROBOT_ID}`)
+      fetch(`http://localhost:8000/robots/${ROBOT_ID}`, { headers: authHeaders() })
         .then(res => res.json())
         .then(data => setRobotDB(data))
         .catch(() => console.warn('[CarryBot] No se pudo cargar el robot de la BD'));
@@ -289,7 +336,7 @@ export default function GestionRobot({ user, onLogout }) {
       const interval = setInterval(() => {
         fetch(`http://localhost:8000/robots/${ROBOT_ID}/pos_x/pos_y/pos_z`, {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: authHeaders(),
           body: JSON.stringify({
             x: positionRef.current.x,
             y: positionRef.current.y,
@@ -362,25 +409,60 @@ export default function GestionRobot({ user, onLogout }) {
         try {
           const parsed = JSON.parse(msg.data);
           setDetection(parsed);
+
+          // ── Lógica de BD: borrar paquete + crear alerta ──────────────────
+          // Solo actuar si hay caja detectada y datos del paquete
+          if (!parsed.box_detected || !parsed.qr_parsed?.id) return;
+
+          const pkgId = parsed.qr_parsed.id;
+
+          // Evitar procesar el mismo paquete más de una vez por sesión
+          if (processedPkgIdsRef.current.has(pkgId)) return;
+          processedPkgIdsRef.current.add(pkgId);
+
+          // Llamada al backend: borra el paquete de BD y crea alerta 'cargar'
+          fetch('http://localhost:8000/paquetes/detectado', {
+            method: 'POST',
+            headers: authHeaders(),
+            body: JSON.stringify({
+              codigo_barras: pkgId,
+              dest:          parsed.qr_parsed.dest ?? 'desconocido',
+              id_robot:      ROBOT_ID,
+              id_trabajador: user?.id ?? 1,
+            }),
+          })
+            .then(res => res.json())
+            .then(data => {
+              if (data.ok) {
+                const msg = data.paquete_eliminado
+                  ? `📦 ${pkgId} detectado y eliminado de inventario. Alerta creada.`
+                  : `📦 ${pkgId} detectado. Alerta creada.`;
+                setAnnouncement(msg);
+                setTimeout(() => setAnnouncement(null), 8000);
+              }
+            })
+            .catch(() => console.warn('[CarryBot] Error al procesar paquete en BD'));
+
+          // ── Crear tarea si hay destino válido ────────────────────────────
           const DESTINOS_COORDS = {
             Estanteria1:  { x: 6.917, y: 2.282 },
             Estanteria2:  { x: 8.808, y: 2.295 },
             PuntoDeCarga: { x: 4.663, y: 1.682 },
           };
 
-          if (parsed.qr_detected && parsed.qr_parsed?.dest && !tareaActual) {
-            const dest = parsed.qr_parsed.dest;
+          if (parsed.qr_parsed?.dest && !tareaActual) {
+            const dest   = parsed.qr_parsed.dest;
             const coords = DESTINOS_COORDS[dest];
             if (coords) {
               fetch('http://localhost:8000/tareas/', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: authHeaders(),
                 body: JSON.stringify({
-                  id_robot:         ROBOT_ID,
-                  destino_nombre:  dest,
-                  destino_x:        coords.x,
-                  destino_y:        coords.y,
-                  qr_data:          parsed.qr_data,
+                  id_robot:       ROBOT_ID,
+                  destino_nombre: dest,
+                  destino_x:      coords.x,
+                  destino_y:      coords.y,
+                  qr_data:        parsed.qr_data,
                 }),
               })
                 .then(res => res.json())
@@ -388,6 +470,7 @@ export default function GestionRobot({ user, onLogout }) {
                 .catch(() => {});
             }
           }
+
         } catch {
           console.warn('[CarryBot] Error parseando /package/detection:', msg.data);
         }
@@ -434,6 +517,183 @@ export default function GestionRobot({ user, onLogout }) {
   const cameraUrl = showProcessed
     ? "http://localhost:8080/stream?topic=/camera/processed"
     : "http://localhost:8080/stream?topic=/camera/image_raw";
+
+  const parsearOrden = useCallback((texto) => {
+    // Normalizar: minúsculas, quitar acentos, limpiar espacios
+    const t = texto
+      .toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')   // quitar acentos
+      .replace(/[^a-z0-9\s]/g, '')                        // solo letras y números
+      .trim();
+
+    // ── Números escritos como palabras ───────────────────────────────────────
+    const num = (s) =>
+      s.replace(/\buno\b/g,    '1')
+      .replace(/\bprimero?\b/g,'1')
+      .replace(/\bdos\b/g,    '2')
+      .replace(/\bsegundo?\b/g,'2')
+      .replace(/\btres\b/g,   '3')
+      .replace(/\btercero?\b/g,'3');
+
+    const n = num(t);
+
+    // ── STOP / CANCELAR ───────────────────────────────────────────────────────
+    if (/\b(para|stop|detente|cancela|detener|cancelar|quieto)\b/.test(n)) {
+      return { action: 'cancel', param: '' };
+    }
+
+    // ── PUNTO DE CARGA ────────────────────────────────────────────────────────
+    if (/\b(carga|descarga|punto de carga)\b/.test(n)) {
+      return { action: 'nav_goal', param: 'PuntoDeCarga' };
+    }
+
+    // ── ESTANTERÍAS ───────────────────────────────────────────────────────────
+    if (/\b(estanteri[ao]|estante|almacen|shelf)\b/.test(n)) {
+      if (/\b(2|dos|segunda?)\b/.test(n))
+        return { action: 'nav_goal', param: 'Estanteria2' };
+      return { action: 'nav_goal', param: 'Estanteria1' };  // default a 1
+    }
+
+    // ── PATRULLA ──────────────────────────────────────────────────────────────
+    if (/\b(patrull[ae]|patrullar|zona)\b/.test(n)) {
+      if (/\b(2|dos|segunda?)\b/.test(n))
+        return { action: 'patrol_goal', param: 'Zona2' };
+      return { action: 'patrol_goal', param: 'Zona1' };
+    }
+
+    // ── PEDIDOS INDIVIDUALES ──────────────────────────────────────────────────
+    if (/\b(pedido|paquete|entrega|recoger)\b/.test(n)) {
+      if (/\b(3|tres|tercero?)\b/.test(n))
+        return { action: 'pedido', param: 'Pedido3' };
+      if (/\b(2|dos|segundo?)\b/.test(n))
+        return { action: 'pedido', param: 'Pedido2' };
+      return { action: 'pedido', param: 'Pedido1' };       // default a 1
+    }
+
+    // ── RUTA FIJA ─────────────────────────────────────────────────────────────
+    if (/\b(ruta|ruta fija|todos los pedidos|ruta completa|recogida)\b/.test(n)) {
+      return { action: 'ruta_fija', param: '' };
+    }
+
+    // ── TELEOP ────────────────────────────────────────────────────────────────
+    if (/\b(adelante|avanza|hacia delante|forward)\b/.test(n))
+      return { action: 'teleop', param: 'adelante' };
+    if (/\b(atras|retrocede|hacia atras|back)\b/.test(n))
+      return { action: 'teleop', param: 'atras' };
+    if (/\b(izquierda|gira izquierda|left)\b/.test(n))
+      return { action: 'teleop', param: 'izquierda' };
+    if (/\b(derecha|gira derecha|right)\b/.test(n))
+      return { action: 'teleop', param: 'derecha' };
+
+    // ── No reconocido ─────────────────────────────────────────────────────────
+    return { action: 'unknown', param: '' };
+  }, []);
+
+  const ejecutarAccion = useCallback((accion, transcript) => {
+    const { action, param } = accion;
+
+    switch (action) {
+      case 'nav_goal':
+        publishCommand('/web/nav_goal', param);
+        setVoiceStatus(`✅ Navegando a ${param}`);
+        break;
+
+      case 'patrol_goal':
+        publishCommand('/web/patrol_goal', param);
+        setVoiceStatus(`✅ Patrullando ${param}`);
+        break;
+
+      case 'ruta_fija':
+        publishCommand('/web/ruta_fija', 'start');
+        setVoiceStatus('✅ Ruta fija iniciada');
+        break;
+
+      case 'pedido':
+        publishCommand('/web/pedido', param);
+        setVoiceStatus(`✅ Ejecutando ${param}`);
+        break;
+
+      case 'cancel':
+        publishCommand('/web/cancel', 'stop');
+        setVoiceStatus('✅ Robot detenido');
+        break;
+
+      case 'teleop': {
+        const movMap = {
+          adelante:  [0.2,  0],
+          atras:     [-0.2, 0],
+          izquierda: [0,    0.5],
+          derecha:   [0,   -0.5],
+        };
+        const [lx, az] = movMap[param] ?? [0, 0];
+        publishVel(lx, az);
+        setVoiceStatus(`✅ Moviendo: ${param}`);
+        break;
+      }
+
+      default:
+        setVoiceStatus(`❓ No entendí: "${transcript}"`);
+    }
+
+    setTimeout(() => setVoiceStatus(''), 4000);
+  }, [publishCommand, publishVel]);
+
+  const toggleVoice = useCallback(() => {
+    const SpeechRecognition =
+      window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      alert('Reconocimiento de voz no disponible.\nUsa Chrome o Edge.');
+      return;
+    }
+
+    // Si ya está activo → parar
+    if (voiceActive) {
+      recognitionRef.current?.stop();
+      setVoiceActive(false);
+      setVoiceStatus('');
+      setVoiceTranscript('');
+      return;
+    }
+
+    const recognition          = new SpeechRecognition();
+    recognition.lang           = 'es-ES';
+    recognition.continuous     = true;    // escucha hasta que se pulse parar
+    recognition.interimResults = false;   // solo resultados finales confirmados
+
+    recognition.onstart = () => {
+      setVoiceActive(true);
+      setVoiceStatus('🎙️ Escuchando...');
+    };
+
+    recognition.onresult = (event) => {
+      const transcript = event.results[event.results.length - 1][0].transcript.trim();
+      setVoiceTranscript(transcript);
+
+      const accion = parsearOrden(transcript);
+      ejecutarAccion(accion, transcript);
+    };
+
+    recognition.onerror = (event) => {
+      // 'no-speech' es normal si hay silencio, no hace falta mostrar error
+      if (event.error === 'no-speech') return;
+      console.error('[VOZ] Error:', event.error);
+      setVoiceActive(false);
+      setVoiceStatus('❌ Error de micrófono');
+      setTimeout(() => setVoiceStatus(''), 3000);
+    };
+
+    recognition.onend = () => {
+      // Reiniciar automáticamente si se cerró solo (pausa de silencio)
+      if (recognitionRef.current && voiceActive) {
+        try { recognition.start(); } catch { /* ya reiniciando */ }
+      }
+    };
+
+    recognitionRef.current = recognition;
+    recognition.start();
+  }, [voiceActive, parsearOrden, ejecutarAccion]);
+
 
   return (
     <div>
@@ -687,6 +947,8 @@ export default function GestionRobot({ user, onLogout }) {
             <div className="cb-card" style={{ marginTop: 12 }}>
               <div className="cb-card-header"> Gestión de entregas</div>
               <div className="cb-card-body">
+
+                {/* Ruta completa */}
                 <p style={{ fontSize: 12, color: C.muted, marginBottom: 8 }}>Ruta automática</p>
                 <button
                   className="cb-control-btn active"
@@ -696,6 +958,24 @@ export default function GestionRobot({ user, onLogout }) {
                 >
                    Iniciar ruta fija (todos los pedidos)
                 </button>
+
+                {/* Separador */}
+                <div style={{ borderTop: `1.5px solid ${C.border}`, margin: '4px 0 12px' }} />
+
+                {/* Pedidos individuales */}
+                <p style={{ fontSize: 12, color: C.muted, marginBottom: 8 }}>Pedido individual</p>
+                {["Pedido1", "Pedido2", "Pedido3"].map((pedido) => (
+                  <button
+                    key={pedido}
+                    className="cb-control-btn"
+                    style={{ marginBottom: 8 }}
+                    disabled={!connected}
+                    onClick={() => publishCommand('/web/pedido', pedido)}
+                  >
+                    📦 {pedido}
+                  </button>
+                ))}
+
               </div>
             </div>
           )}
@@ -774,11 +1054,9 @@ export default function GestionRobot({ user, onLogout }) {
                         onClick={() => {
                                 publishCommand('/web/nav_goal', detection.qr_parsed.dest);
                                 if (tareaActual) {
-                                  fetch(`http://localhost:8000/tareas/${tareaActual}/estado?estado=en_curso`, {
-                                    method: 'PUT',
+                                  fetch(`http://localhost:8000/tareas/${tareaActual}/estado?estado=en_curso`, { headers: authHeaders(), method: 'PUT',
                                   }).catch(() => {});
-                                  fetch(`http://localhost:8000/robots/${ROBOT_ID}/estado?estado=en_tarea`, {
-                                    method: 'PUT',
+                                  fetch(`http://localhost:8000/robots/${ROBOT_ID}/estado?estado=en_tarea`, { headers: authHeaders(), method: 'PUT',
                                   }).catch(() => {});
                                 }
                               }}
@@ -826,6 +1104,53 @@ export default function GestionRobot({ user, onLogout }) {
           )}
         </div>
 
+        {/* ── Control por voz ── */}
+        {connected && (
+          <div style={{ marginTop: 12 }}>
+            <button
+              onClick={toggleVoice}
+              style={{
+                width: '100%', padding: '12px',
+                background: voiceActive ? '#7c3aed' : C.navy,
+                color: 'white', border: 'none', borderRadius: '8px',
+                fontSize: '14px', fontWeight: '700', cursor: 'pointer',
+                letterSpacing: '0.5px', textTransform: 'uppercase',
+                boxShadow: voiceActive ? '0 0 12px rgba(124,58,237,0.5)' : 'none',
+                transition: 'all .2s',
+              }}
+            >
+              {voiceActive ? '🎙️ VOZ ACTIVA — Pulsa para parar' : '🎙️ Control por voz'}
+            </button>
+
+            {/* Última frase transcrita */}
+            {voiceTranscript && (
+              <div style={{
+                marginTop: 6, padding: '6px 10px',
+                background: '#f0f2f7', borderRadius: 6,
+                fontSize: 12, color: C.muted, fontStyle: 'italic',
+              }}>
+                🗣 "{voiceTranscript}"
+              </div>
+            )}
+
+            {/* Feedback de la acción */}
+            {voiceStatus && (
+              <div style={{
+                marginTop: 4, padding: '7px 10px', borderRadius: 6,
+                fontSize: 13, fontWeight: 600,
+                background: voiceStatus.startsWith('✅') ? '#f0fdf4'
+                          : voiceStatus.startsWith('❌') ? '#fef2f2' : '#fefce8',
+                border: `1px solid ${
+                  voiceStatus.startsWith('✅') ? '#86efac'
+                  : voiceStatus.startsWith('❌') ? '#fca5a5' : '#fde68a'}`,
+                color: C.text,
+              }}>
+                {voiceStatus}
+              </div>
+            )}
+          </div>
+        )}
+
         {connected && (
           <div style={{ marginTop: 12 }}>
             <button
@@ -840,12 +1165,10 @@ export default function GestionRobot({ user, onLogout }) {
               onClick={() => {
                           publishCommand('/web/cancel', 'stop');
                           if (tareaActual) {
-                            fetch(`http://localhost:8000/tareas/${tareaActual}/estado?estado=cancelada`, {
-                              method: 'PUT',
+                            fetch(`http://localhost:8000/tareas/${tareaActual}/estado?estado=cancelada`, { headers: authHeaders(), method: 'PUT',
                             }).catch(() => {});
                             setTareaActual(null);
-                            fetch(`http://localhost:8000/robots/${ROBOT_ID}/estado?estado=activo`, {
-                              method: 'PUT',
+                            fetch(`http://localhost:8000/robots/${ROBOT_ID}/estado?estado=activo`, { headers: authHeaders(), method: 'PUT',
                             }).catch(() => {});
                           }
                         }}
@@ -854,19 +1177,21 @@ export default function GestionRobot({ user, onLogout }) {
             </button>
           </div>
         )}
-      </div>
-
-      <footer className="cb-footer">
-        <div>
-          <span className="cb-footer-logo">Carry<span>bot</span></span>
-          <span style={{ marginLeft: 8 }}>© Copyright Carrybot</span>
-        </div>
-        <div className="cb-footer-icons">
-          <span title="Twitter">🐦</span>
-          <span title="Instagram">📸</span>
-          <span title="Facebook">📘</span>
-        </div>
-      </footer>
+      
+	</div> 
+     <footer className="cb-footer">
+	  <div className="cb-footer-brand">
+	    <img 
+	      src={logoImg} 
+	      alt="Logo" 
+	      className="cb-footer-logo-img" 
+	    />
+	    <span className="cb-footer-logo-text">Carry<span>bot</span></span>
+	  </div>
+	  <div className="cb-footer-copy">
+	    © Copyright Carrybot
+	  </div>
+	</footer>
     </div>
   );
 }

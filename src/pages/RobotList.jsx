@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
+import { authHeaders } from '../utils/auth'
 import { useNavigate } from 'react-router-dom'
-import Navbar from '../components/Navbar' // Importación del menú unificado
+import Navbar from '../components/Navbar' 
+import logoImg from "../assets/logo.png"
 
 const C = {
   navy: '#1a2d5a',     // Azul marino
@@ -22,14 +24,12 @@ const GLOBAL_CSS = `
 
   .cb-page { min-height: 100vh; display: flex; flex-direction: column; }
 
-  /* Se han eliminado los estilos antiguos de .cb-navbar, .cb-logo, .cb-nav-links, etc. */
-
   .cb-main { flex: 1; padding: 60px 40px; max-width: 1300px; margin: 0 auto; width: 100%; }
   .cb-title { text-align: center; font-size: 30px; font-weight: 700; color: #2c3e50; margin-bottom: 50px; }
 
   .cb-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 30px; }
   .cb-card { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
-  
+   
   .cb-card-header { background: ${C.navy}; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; }
   .cb-card-header h3 { font-size: 18px; font-weight: 600; }
 
@@ -48,9 +48,21 @@ const GLOBAL_CSS = `
   .cb-btn-main:active { transform: scale(0.98); }
   .cb-btn-outline { background: white; border: 2px solid ${C.navy}; color: ${C.navy}; padding: 10px; border-radius: 8px; font-weight: 700; cursor: pointer; text-transform: uppercase; width: 100%; }
 
-  .cb-footer { background: ${C.navy}; padding: 30px 40px; margin-top: 50px; }
-  .cb-footer-content { display: flex; align-items: center; gap: 15px; color: #8892b0; font-size: 14px; }
-  .cb-footer-logo-img { height: 35px; width: auto; opacity: 0.7; }
+  .cb-footer {
+    background: #1a2d5a;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 15px 40px;
+    margin-top: auto;
+  }
+
+  .cb-footer-brand { display: flex; align-items: center; gap: 10px; }
+  .cb-footer-logo-img { height: 30px; width: auto; object-fit: contain; display: block; }
+  .cb-footer-logo-text { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 20px; color: white; }
+  .cb-footer-logo-text span { color: #f5c518; }
+  .cb-footer-copy { font-size: 13px; color: rgba(255, 255, 255, 0.8); }
 `
 
 export default function RobotList({ user, onLogout }) {
@@ -64,19 +76,24 @@ export default function RobotList({ user, onLogout }) {
     styleEl.textContent = GLOBAL_CSS
     document.head.appendChild(styleEl)
     
-    fetch('http://localhost:8000/robots/')
-      .then(res => res.json())
-      .then(data => {
-        setRobots(data)
-        setLoading(false)
-      })
-      .catch((err) => {
-        console.error("Error al conectar con el servidor:", err)
-        setLoading(false)
-      })
+    // Si el usuario está logueado, filtramos pidiendo solo sus robots asignados
+    if (user && user.id) {
+      fetch(`http://localhost:8000/usuarios/asignados/${user.id}`, { headers: authHeaders() })
+        .then(res => res.json())
+        .then(data => {
+          setRobots(data)
+          setLoading(false)
+        })
+        .catch((err) => {
+          console.error("Error al conectar con el servidor:", err)
+          setLoading(false)
+        })
+    } else {
+      setLoading(false)
+    }
 
     return () => document.head.removeChild(styleEl)
-  }, [])
+  }, [user]) // Re-ejecutar si cambian los datos del usuario
 
   const handleNav = (path) => navigate(path)
 
@@ -106,7 +123,7 @@ export default function RobotList({ user, onLogout }) {
         
         {loading ? (
           <p style={{ textAlign: 'center', color: C.navy }}>Estableciendo conexión con la flota...</p>
-        ) : (
+        ) : robots.length > 0 ? (
           <div className="cb-grid">
             {robots.map((robot) => (
               <div key={robot.id} className="cb-card">
@@ -127,12 +144,12 @@ export default function RobotList({ user, onLogout }) {
 
                   <div className="cb-info-row">
                     <span className="cb-info-label">ID del Robot:</span>
-                    <span>{robot.id_etiqueta || robot.id}</span> 
+                    <span>{robot.id}</span> 
                   </div>
 
                   <div className="cb-info-row">
-                    <span className="cb-info-label">Última ubicación:</span>
-                    <span>{robot.ubicacion || 'Almacén Central'}</span>
+                    <span className="cb-info-label">Modelo:</span>
+                    <span>{robot.modelo || 'TurtleBot3'}</span> 
                   </div>
 
                   {['activo', 'en_tarea'].includes(robot.estado) ? (
@@ -148,17 +165,19 @@ export default function RobotList({ user, onLogout }) {
               </div>
             ))}
           </div>
+        ) : (
+          <p style={{ textAlign: 'center', color: C.navy, fontSize: '18px', fontWeight: '500' }}>
+            No tienes ningún robot asignado actualmente. Contacta con tu administrador.
+          </p>
         )}
       </div>
 
       <footer className="cb-footer">
-        <div className="cb-footer-content">
-          <div style={{ fontSize: '20px', color: 'white', fontWeight: 700, display: 'flex', alignItems: 'center' }}>
-            <div style={{ marginRight: 8 }}>🤖</div>
-            <span>Carrybot</span>
-          </div>
-          <span style={{ marginLeft: '15px', color: '#8892b0' }}>© Copyright Carrybot</span>
+        <div className="cb-footer-brand">
+          <img src={logoImg} alt="Logo" className="cb-footer-logo-img" />
+          <span className="cb-footer-logo-text">Carry<span>bot</span></span>
         </div>
+        <div className="cb-footer-copy">© Copyright Carrybot</div>
       </footer>
     </div>
   )

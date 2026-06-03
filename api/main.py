@@ -1,10 +1,10 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from api.routers import usuarios, tareas, robots
+from api.routers import usuarios, tareas, robots, paquetes
 from api.routers import incidencias
 from api.routers import alertas
-from api.routers import usuarios, inventario
+from api.routers import inventario
 
 app = FastAPI()
 
@@ -22,6 +22,7 @@ app.include_router(robots.router)
 app.include_router(incidencias.router)
 app.include_router(alertas.router)
 app.include_router(inventario.router)
+app.include_router(paquetes.router)
 
 @app.get("/")
 def root():

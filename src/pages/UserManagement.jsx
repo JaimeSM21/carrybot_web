@@ -1,6 +1,8 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
+import { authHeaders } from '../utils/auth'
 import { useNavigate } from 'react-router-dom'
-import Navbar from '../components/Navbar' // Importación del menú unificado
+import Navbar from '../components/Navbar' 
+import logoImg from "../assets/logo.png"
 
 const C = {
   navy: '#1a2d5a',
@@ -22,15 +24,13 @@ const GLOBAL_CSS = `
 
   .cb-page { min-height: 100vh; display: flex; flex-direction: column; }
 
-  /* Se han eliminado las clases antiguas de .cb-navbar, .cb-logo-text y .cb-nav-btn */
-
   .cb-main-content { 
     flex: 1; display: flex; flex-direction: column; 
     align-items: center; padding: 40px 28px; 
   }
 
   .cb-card {
-    width: 100%; max-width: 900px;
+    width: 100%; max-width: 1050px;
     background: ${C.white}; border: 1.5px solid ${C.border};
     border-radius: 14px; overflow: hidden;
     box-shadow: 0 8px 30px rgba(15, 23, 42, .06);
@@ -67,11 +67,12 @@ const GLOBAL_CSS = `
     justify-content: center; align-items: center; z-index: 1000; 
   }
   .modal-box { 
-    width: 100%; max-width: 450px; background: white; 
+    width: 100%; max-width: 480px; background: white; 
     border-radius: 14px; overflow: hidden; border: 1.5px solid ${C.border};
     box-shadow: 0 20px 50px rgba(0,0,0,0.3);
   }
   .modal-body { padding: 28px; display: flex; flex-direction: column; gap: 15px; }
+  
   .cb-input { 
     width: 100%; border: 1.5px solid ${C.border}; 
     border-radius: 10px; padding: 12px 15px; font-size: 16px; outline: none;
@@ -79,23 +80,40 @@ const GLOBAL_CSS = `
   }
   .cb-input:focus { border-color: ${C.navy}; box-shadow: 0 0 0 3px rgba(26,45,90,.08); }
 
+  /* Contenedor de Checkboxes de Robots */
+  .cb-robots-selection-title { font-size: 14px; font-weight: 700; color: ${C.navy}; margin-top: 5px; }
+  .cb-robots-checkbox-list {
+    display: flex; flex-direction: column; gap: 8px; 
+    max-height: 120px; overflow-y: auto;
+    border: 1.5px solid ${C.border}; border-radius: 10px; padding: 10px;
+  }
+  .cb-robot-option { display: flex; align-items: center; gap: 10px; font-size: 14px; cursor: pointer; }
+  .cb-robot-option input { width: 18px; height: 18px; cursor: pointer; }
+
+  .cb-robot-tag {
+    background: #eef2f6; border: 1px solid ${C.border};
+    padding: 3px 8px; border-radius: 6px; font-size: 12px;
+    font-weight: 600; color: ${C.navy}; display: inline-flex;
+    align-items: center; gap: 4px; margin-right: 4px; margin-bottom: 4px;
+  }
+  .cb-robot-none { color: ${C.muted}; font-style: italic; font-size: 13px; }
+
   /* Footer */
   .cb-footer {
-    background: ${C.navy}; color: rgba(255,255,255,.7);
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 14px 28px; font-size: 13px; margin-top: auto;
+    background: #1a2d5a; color: #ffffff; display: flex;
+    align-items: center; justify-content: space-between; padding: 15px 40px; margin-top: auto;
   }
-  .cb-footer-logo { 
-    font-family: 'Barlow Condensed', sans-serif; 
-    font-weight: 700; font-size: 18px; color: ${C.white}; 
-  }
-  .cb-footer-logo span { color: ${C.yellow}; }
-  .cb-footer-icons { display: flex; gap: 14px; font-size: 18px; }
+  .cb-footer-brand { display: flex; align-items: center; gap: 10px; }
+  .cb-footer-logo-img { height: 30px; width: auto; object-fit: contain; display: block; }
+  .cb-footer-logo-text { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 20px; color: white; }
+  .cb-footer-logo-text span { color: #f5c518; }
+  .cb-footer-copy { font-size: 13px; color: rgba(255, 255, 255, 0.8); }
 `
 
 export default function UserManagement({ user, onLogout }) {
   const navigate = useNavigate();
   const [usuarios, setUsuarios] = useState([]);
+  const [robotsDisponibles, setRobotsDisponibles] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
   
   const [showAdd, setShowAdd] = useState(false);
@@ -103,47 +121,88 @@ export default function UserManagement({ user, onLogout }) {
   const [showDeleteSuccess, setShowDeleteSuccess] = useState(false);
 
   const [formData, setFormData] = useState({ nombre: '', email: '', password: '' });
+  const [robotsSeleccionados, setRobotsSeleccionados] = useState([]);
 
   const cargarUsuarios = () => {
-    fetch('http://localhost:8000/usuarios/')
+    fetch('http://localhost:8000/usuarios/', { headers: authHeaders() })
       .then(res => res.json())
-      .then(data => setUsuarios(data));
+      .then(data => setUsuarios(data))
+      .catch(() => console.error("Error cargando usuarios"));
+  };
+
+  const cargarRobots = () => {
+    fetch('http://localhost:8000/robots/', { headers: authHeaders() })
+      .then(res => res.json())
+      .then(data => setRobotsDisponibles(data))
+      .catch(() => console.warn("No se pudieron cargar los robots"));
   };
 
   useEffect(() => {
     cargarUsuarios();
+    cargarRobots();
+    
     const styleEl = document.createElement('style');
     styleEl.textContent = GLOBAL_CSS;
     document.head.appendChild(styleEl);
     return () => document.head.removeChild(styleEl);
   }, []);
 
-  const handleAdd = async (e) => {
+  const handleRobotToggle = (robotId) => {
+    if (robotsSeleccionados.includes(robotId)) {
+      setRobotsSeleccionados(robotsSeleccionados.filter(id => id !== robotId));
+    } else {
+      setRobotsSeleccionados([...robotsSeleccionados, robotId]);
+    }
+  };
+
+ const handleAdd = async (e) => {
     e.preventDefault();
-    const res = await fetch('http://localhost:8000/usuarios/registro', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(formData)
-    });
-    if (res.ok) {
+    try {
+      // Enviamos todo junto, incluyendo el array id_robots que espera tu nuevo Python
+      const res = await fetch('http://localhost:8000/usuarios/registro', {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify({
+          nombre: formData.nombre,
+          email: formData.email,
+          password: formData.password,
+          id_robots: robotsSeleccionados
+        })
+      });
+      
+      if (res.ok) {
+        console.log("Trabajador registrado y robots vinculados con éxito.");
+      }
+    } catch (error) {
+      console.error("Error en la petición de registro:", error);
+    } finally {
+      // Forzamos el cierre del modal y la recarga de la tabla pase lo que pase
       setShowAdd(false);
       setFormData({ nombre: '', email: '', password: '' });
-      cargarUsuarios();
+      setRobotsSeleccionados([]);
+      cargarUsuarios(); // ¡Esto hará que aparezca en la lista al instante!
     }
   };
 
   const handleUpdate = async () => {
+    // Tu usuarios.py recibe 'id_robots' dentro del body del PUT y actualiza la tabla intermedia sola
     await fetch(`http://localhost:8000/usuarios/${selectedUser.id}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(formData)
+      headers: authHeaders(),
+      body: JSON.stringify({
+        nombre: formData.nombre,
+        email: formData.email,
+        password: formData.password,
+        id_robots: robotsSeleccionados 
+      })
     });
     setShowEdit(false);
+    setRobotsSeleccionados([]);
     cargarUsuarios();
   };
 
   const handleDelete = async (user) => {
-    await fetch(`http://localhost:8000/usuarios/${user.id}`, { method: 'DELETE' });
+    await fetch(`http://localhost:8000/usuarios/${user.id}`, { headers: authHeaders(), method: 'DELETE' });
     setSelectedUser(user);
     setShowDeleteSuccess(true);
     cargarUsuarios();
@@ -151,7 +210,6 @@ export default function UserManagement({ user, onLogout }) {
 
   return (
     <div className="cb-page">
-      {/* MENÚ ADMINISTRADOR UNIFICADO */}
       <Navbar variant="admin" user={user} onLogout={onLogout} />
 
       <div className="cb-main-content">
@@ -163,6 +221,7 @@ export default function UserManagement({ user, onLogout }) {
                 <th>Nombre</th>
                 <th>E-mail</th>
                 <th>Fecha alta</th>
+                <th>Robots Asignados</th>
                 <th style={{textAlign: 'center'}}>Acciones</th>
               </tr>
             </thead>
@@ -172,10 +231,20 @@ export default function UserManagement({ user, onLogout }) {
                   <td>{u.nombre}</td>
                   <td>{u.email}</td>
                   <td>{new Date(u.fecha_alta).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}</td>
+                  <td>
+                    {u.robots && u.robots.length > 0 ? (
+                      u.robots.map(rId => (
+                        <span key={rId} className="cb-robot-tag">🤖 ID: {rId}</span>
+                      ))
+                    ) : (
+                      <span className="cb-robot-none">Ninguno asignado</span>
+                    )}
+                  </td>
                   <td style={{textAlign: 'center'}}>
                     <button className="btn-action btn-edit" onClick={() => {
                       setSelectedUser(u);
                       setFormData({ nombre: u.nombre, email: u.email, password: '' });
+                      setRobotsSeleccionados(u.robots || []);
                       setShowEdit(true);
                     }}>Editar</button>
                     <button className="btn-action btn-delete" onClick={() => handleDelete(u)}>Eliminar</button>
@@ -186,10 +255,13 @@ export default function UserManagement({ user, onLogout }) {
           </table>
         </div>
 
-        <button className="cb-btn-add" onClick={() => setShowAdd(true)}>Añadir Usuario</button>
+        <button className="cb-btn-add" onClick={() => {
+          setFormData({ nombre: '', email: '', password: '' });
+          setRobotsSeleccionados([]);
+          setShowAdd(true);
+        }}>Añadir Usuario</button>
       </div>
 
-      {/* POPUPS (Añadir, Editar, Borrar) - Se mantienen intactos */}
       {showAdd && (
         <div className="modal-overlay">
           <div className="modal-box">
@@ -198,6 +270,21 @@ export default function UserManagement({ user, onLogout }) {
               <input className="cb-input" placeholder="Nombre completo" required value={formData.nombre} onChange={e => setFormData({...formData, nombre: e.target.value})} />
               <input className="cb-input" type="email" placeholder="Correo electrónico" required value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
               <input className="cb-input" type="password" placeholder="Contraseña" required value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} />
+              
+              <div className="cb-robots-selection-title">Asignar Flota de Robots:</div>
+              <div className="cb-robots-checkbox-list">
+                {robotsDisponibles.map(r => (
+                  <label key={r.id} className="cb-robot-option">
+                    <input 
+                      type="checkbox" 
+                      checked={robotsSeleccionados.includes(r.id)}
+                      onChange={() => handleRobotToggle(r.id)}
+                    />
+                    <span>🤖 {r.modelo || 'TurtleBot'} (ID: {r.id})</span>
+                  </label>
+                ))}
+              </div>
+
               <button className="cb-btn-add" style={{marginTop: 10}}>Registrar Trabajador</button>
               <button type="button" className="btn-action" style={{marginTop: 10, background: '#eee', color: '#333'}} onClick={() => setShowAdd(false)}>Cancelar</button>
             </form>
@@ -208,11 +295,26 @@ export default function UserManagement({ user, onLogout }) {
       {showEdit && (
         <div className="modal-overlay">
           <div className="modal-box">
-            <div className="cb-card-header">Editar Datos</div>
+            <div className="cb-card-header">Editar Datos y Flota</div>
             <div className="modal-body">
               <input className="cb-input" value={formData.nombre} onChange={e => setFormData({...formData, nombre: e.target.value})} />
               <input className="cb-input" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
               <input className="cb-input" type="password" placeholder="Nueva contraseña (opcional)" onChange={e => setFormData({...formData, password: e.target.value})} />
+              
+              <div className="cb-robots-selection-title">Modificar Robots Asignados:</div>
+              <div className="cb-robots-checkbox-list">
+                {robotsDisponibles.map(r => (
+                  <label key={r.id} className="cb-robot-option">
+                    <input 
+                      type="checkbox" 
+                      checked={robotsSeleccionados.includes(r.id)}
+                      onChange={() => handleRobotToggle(r.id)}
+                    />
+                    <span>🤖 {r.modelo || 'TurtleBot'} (ID: {r.id})</span>
+                  </label>
+                ))}
+              </div>
+
               <button className="cb-btn-add" style={{marginTop: 10}} onClick={handleUpdate}>Guardar Cambios</button>
               <button className="btn-action" style={{marginTop: 10, background: '#eee', color: '#333', width: '100%'}} onClick={() => setShowEdit(false)}>Volver</button>
             </div>
@@ -233,13 +335,11 @@ export default function UserManagement({ user, onLogout }) {
       )}
 
       <footer className="cb-footer">
-        <div>
-          <span className="cb-footer-logo">Carry<span>bot</span></span>
-          <span style={{ marginLeft: 8 }}>© Copyright Carrybot</span>
+        <div className="cb-footer-brand">
+          <img src={logoImg} alt="Logo" className="cb-footer-logo-img" />
+          <span className="cb-footer-logo-text">Carry<span>bot</span></span>
         </div>
-        <div className="cb-footer-icons">
-          <span>🐦</span> <span>📸</span> <span>📘</span>
-        </div>
+        <div className="cb-footer-copy">© Copyright Carrybot</div>
       </footer>
     </div>
   )

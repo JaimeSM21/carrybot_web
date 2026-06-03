@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
+import { authHeaders } from '../utils/auth'
 import { useNavigate } from 'react-router-dom'
 import Navbar from '../components/Navbar'
+import logoImg from "../assets/logo.png"
 
 const CSS = `
 .alertas-page {
@@ -99,33 +101,45 @@ const CSS = `
   font-weight: 700;
 }
 
-/* --- CSS DEL FOOTER AÑADIDO AQUÍ --- */
 .cb-footer {
-  background: #1a2d5a;
-  color: white;
-  padding: 20px 28px;
+  background: #1a2d5a; /* Tu azul corporativo */
+  color: #ffffff;
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  font-size: 14px;
-  margin-top: auto; /* Esto empuja el footer al final */
+  justify-content: space-between;
+  padding: 15px 40px;
+  margin-top: auto; /* Truco para que el footer se quede siempre abajo */
 }
 
-.cb-footer-logo {
-  font-family: 'Barlow Condensed', sans-serif;
-  font-weight: 800;
-  font-size: 24px;
-}
-
-.cb-footer-logo span {
-  color: #f5c518;
-}
-
-.cb-footer-icons {
+.cb-footer-brand {
   display: flex;
-  gap: 15px;
-  font-size: 20px;
+  align-items: center;
+  gap: 10px; /* Espacio entre el robot y el texto */
 }
+
+.cb-footer-logo-img {
+  height: 30px; /* Tamaño ideal para el pie de página */
+  width: auto;
+  object-fit: contain;
+  display: block;
+}
+
+.cb-footer-logo-text {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 700;
+  font-size: 20px;
+  color: white;
+}
+
+.cb-footer-logo-text span {
+  color: #f5c518; /* El color amarillo corporativo para "bot" */
+}
+
+.cb-footer-copy {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.8); /* Blanco suave para el copyright */
+}
+
 `
 
 export default function RegistroAlertas({ user, onLogout }) {
@@ -140,13 +154,25 @@ export default function RegistroAlertas({ user, onLogout }) {
   }, [])
 
   useEffect(() => {
-    fetch('http://localhost:8000/alertas/')
+    if (!user?.id) return
+    
+    fetch(`http://localhost:8000/alertas/usuario/${user.id}`, { headers: authHeaders() })
       .then(res => res.json())
       .then(data => setAlertas(data))
-      .catch(() => {})
-  }, [])
+      .catch(console.error)
+    
+  }, [user])
+
+  const recargarAlertas = () => {
+    if (!user?.id) return
+    fetch(`http://localhost:8000/alertas/usuario/${user.id}`, { headers: authHeaders() })
+      .then(res => res.json())
+      .then(data => setAlertas(data))
+      .catch(console.error)
+  }
 
   const cambiarEstado = (id, nuevoEstado) => {
+    // Actualización optimista en el frontend
     setAlertas(actuales =>
       actuales.map(alerta =>
         alerta.id === id ? { ...alerta, estado: nuevoEstado } : alerta
@@ -154,9 +180,17 @@ export default function RegistroAlertas({ user, onLogout }) {
     )
     fetch(`http://localhost:8000/alertas/${id}/estado`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: authHeaders(),
       body: JSON.stringify({ estado: nuevoEstado }),
-    }).catch(() => {})
+    })
+      .then(res => {
+        if (res.ok) {
+          recargarAlertas() // Sincronizar con la BBDD tras el PUT
+        } else {
+          recargarAlertas() // Revertir si hubo error
+        }
+      })
+      .catch(() => recargarAlertas())
   }
 
   return (
@@ -187,7 +221,6 @@ export default function RegistroAlertas({ user, onLogout }) {
                   <th>Fecha</th>
                   <th>Hora</th>
                   <th>Id_robot</th>
-                  <th>Trabajador</th>
                   <th>Descripcion</th>
                   <th>Estado</th>
                 </tr>
@@ -199,7 +232,6 @@ export default function RegistroAlertas({ user, onLogout }) {
                     <td>{alerta.fecha}</td>
                     <td>{alerta.hora}</td>
                     <td>{alerta.robot_codigo || alerta.id_robot}</td>
-                    <td>{alerta.trabajador}</td>
                     <td>{alerta.descripcion}</td>
                     <td>
                       <select
@@ -220,15 +252,20 @@ export default function RegistroAlertas({ user, onLogout }) {
         </section>
       </main>
 
+      
       <footer className="cb-footer">
-        <div className="cb-footer-logo-wrap">
-          <div className="cb-footer-logo">Carry<span>bot</span></div>
-          <div style={{ opacity: 0.7 }}>© Copyright Carrybot</div>
-        </div>
-        <div className="cb-footer-icons">
-          <span>🐦</span> <span>📸</span> <span>📘</span>
-        </div>
-      </footer>
+	  <div className="cb-footer-brand">
+	    <img 
+	      src={logoImg} 
+	      alt="Logo" 
+	      className="cb-footer-logo-img" 
+	    />
+	    <span className="cb-footer-logo-text">Carry<span>bot</span></span>
+	  </div>
+	  <div className="cb-footer-copy">
+	    © Copyright Carrybot
+	  </div>
+	</footer>
     </div>
   )
 }
