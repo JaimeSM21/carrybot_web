@@ -311,6 +311,11 @@ export default function GestionRobot({ user, onLogout }) {
   const [robotDB,      setRobotDB]      = useState(null);
   const [tareaActual,  setTareaActual]  = useState(null);
 
+  const [voiceActive,     setVoiceActive]     = useState(false);
+  const [voiceTranscript, setVoiceTranscript] = useState('');
+  const [voiceStatus,     setVoiceStatus]     = useState('');
+  const recognitionRef = useRef(null);
+
   useEffect(() => {
     const el = document.createElement("style");
     el.textContent = GLOBAL_CSS;
@@ -512,6 +517,183 @@ export default function GestionRobot({ user, onLogout }) {
   const cameraUrl = showProcessed
     ? "http://localhost:8080/stream?topic=/camera/processed"
     : "http://localhost:8080/stream?topic=/camera/image_raw";
+
+  const parsearOrden = useCallback((texto) => {
+    // Normalizar: minúsculas, quitar acentos, limpiar espacios
+    const t = texto
+      .toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')   // quitar acentos
+      .replace(/[^a-z0-9\s]/g, '')                        // solo letras y números
+      .trim();
+
+    // ── Números escritos como palabras ───────────────────────────────────────
+    const num = (s) =>
+      s.replace(/\buno\b/g,    '1')
+      .replace(/\bprimero?\b/g,'1')
+      .replace(/\bdos\b/g,    '2')
+      .replace(/\bsegundo?\b/g,'2')
+      .replace(/\btres\b/g,   '3')
+      .replace(/\btercero?\b/g,'3');
+
+    const n = num(t);
+
+    // ── STOP / CANCELAR ───────────────────────────────────────────────────────
+    if (/\b(para|stop|detente|cancela|detener|cancelar|quieto)\b/.test(n)) {
+      return { action: 'cancel', param: '' };
+    }
+
+    // ── PUNTO DE CARGA ────────────────────────────────────────────────────────
+    if (/\b(carga|descarga|punto de carga)\b/.test(n)) {
+      return { action: 'nav_goal', param: 'PuntoDeCarga' };
+    }
+
+    // ── ESTANTERÍAS ───────────────────────────────────────────────────────────
+    if (/\b(estanteri[ao]|estante|almacen|shelf)\b/.test(n)) {
+      if (/\b(2|dos|segunda?)\b/.test(n))
+        return { action: 'nav_goal', param: 'Estanteria2' };
+      return { action: 'nav_goal', param: 'Estanteria1' };  // default a 1
+    }
+
+    // ── PATRULLA ──────────────────────────────────────────────────────────────
+    if (/\b(patrull[ae]|patrullar|zona)\b/.test(n)) {
+      if (/\b(2|dos|segunda?)\b/.test(n))
+        return { action: 'patrol_goal', param: 'Zona2' };
+      return { action: 'patrol_goal', param: 'Zona1' };
+    }
+
+    // ── PEDIDOS INDIVIDUALES ──────────────────────────────────────────────────
+    if (/\b(pedido|paquete|entrega|recoger)\b/.test(n)) {
+      if (/\b(3|tres|tercero?)\b/.test(n))
+        return { action: 'pedido', param: 'Pedido3' };
+      if (/\b(2|dos|segundo?)\b/.test(n))
+        return { action: 'pedido', param: 'Pedido2' };
+      return { action: 'pedido', param: 'Pedido1' };       // default a 1
+    }
+
+    // ── RUTA FIJA ─────────────────────────────────────────────────────────────
+    if (/\b(ruta|ruta fija|todos los pedidos|ruta completa|recogida)\b/.test(n)) {
+      return { action: 'ruta_fija', param: '' };
+    }
+
+    // ── TELEOP ────────────────────────────────────────────────────────────────
+    if (/\b(adelante|avanza|hacia delante|forward)\b/.test(n))
+      return { action: 'teleop', param: 'adelante' };
+    if (/\b(atras|retrocede|hacia atras|back)\b/.test(n))
+      return { action: 'teleop', param: 'atras' };
+    if (/\b(izquierda|gira izquierda|left)\b/.test(n))
+      return { action: 'teleop', param: 'izquierda' };
+    if (/\b(derecha|gira derecha|right)\b/.test(n))
+      return { action: 'teleop', param: 'derecha' };
+
+    // ── No reconocido ─────────────────────────────────────────────────────────
+    return { action: 'unknown', param: '' };
+  }, []);
+
+  const ejecutarAccion = useCallback((accion, transcript) => {
+    const { action, param } = accion;
+
+    switch (action) {
+      case 'nav_goal':
+        publishCommand('/web/nav_goal', param);
+        setVoiceStatus(`✅ Navegando a ${param}`);
+        break;
+
+      case 'patrol_goal':
+        publishCommand('/web/patrol_goal', param);
+        setVoiceStatus(`✅ Patrullando ${param}`);
+        break;
+
+      case 'ruta_fija':
+        publishCommand('/web/ruta_fija', 'start');
+        setVoiceStatus('✅ Ruta fija iniciada');
+        break;
+
+      case 'pedido':
+        publishCommand('/web/pedido', param);
+        setVoiceStatus(`✅ Ejecutando ${param}`);
+        break;
+
+      case 'cancel':
+        publishCommand('/web/cancel', 'stop');
+        setVoiceStatus('✅ Robot detenido');
+        break;
+
+      case 'teleop': {
+        const movMap = {
+          adelante:  [0.2,  0],
+          atras:     [-0.2, 0],
+          izquierda: [0,    0.5],
+          derecha:   [0,   -0.5],
+        };
+        const [lx, az] = movMap[param] ?? [0, 0];
+        publishVel(lx, az);
+        setVoiceStatus(`✅ Moviendo: ${param}`);
+        break;
+      }
+
+      default:
+        setVoiceStatus(`❓ No entendí: "${transcript}"`);
+    }
+
+    setTimeout(() => setVoiceStatus(''), 4000);
+  }, [publishCommand, publishVel]);
+
+  const toggleVoice = useCallback(() => {
+    const SpeechRecognition =
+      window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      alert('Reconocimiento de voz no disponible.\nUsa Chrome o Edge.');
+      return;
+    }
+
+    // Si ya está activo → parar
+    if (voiceActive) {
+      recognitionRef.current?.stop();
+      setVoiceActive(false);
+      setVoiceStatus('');
+      setVoiceTranscript('');
+      return;
+    }
+
+    const recognition          = new SpeechRecognition();
+    recognition.lang           = 'es-ES';
+    recognition.continuous     = true;    // escucha hasta que se pulse parar
+    recognition.interimResults = false;   // solo resultados finales confirmados
+
+    recognition.onstart = () => {
+      setVoiceActive(true);
+      setVoiceStatus('🎙️ Escuchando...');
+    };
+
+    recognition.onresult = (event) => {
+      const transcript = event.results[event.results.length - 1][0].transcript.trim();
+      setVoiceTranscript(transcript);
+
+      const accion = parsearOrden(transcript);
+      ejecutarAccion(accion, transcript);
+    };
+
+    recognition.onerror = (event) => {
+      // 'no-speech' es normal si hay silencio, no hace falta mostrar error
+      if (event.error === 'no-speech') return;
+      console.error('[VOZ] Error:', event.error);
+      setVoiceActive(false);
+      setVoiceStatus('❌ Error de micrófono');
+      setTimeout(() => setVoiceStatus(''), 3000);
+    };
+
+    recognition.onend = () => {
+      // Reiniciar automáticamente si se cerró solo (pausa de silencio)
+      if (recognitionRef.current && voiceActive) {
+        try { recognition.start(); } catch { /* ya reiniciando */ }
+      }
+    };
+
+    recognitionRef.current = recognition;
+    recognition.start();
+  }, [voiceActive, parsearOrden, ejecutarAccion]);
+
 
   return (
     <div>
@@ -921,6 +1103,53 @@ export default function GestionRobot({ user, onLogout }) {
             </div>
           )}
         </div>
+
+        {/* ── Control por voz ── */}
+        {connected && (
+          <div style={{ marginTop: 12 }}>
+            <button
+              onClick={toggleVoice}
+              style={{
+                width: '100%', padding: '12px',
+                background: voiceActive ? '#7c3aed' : C.navy,
+                color: 'white', border: 'none', borderRadius: '8px',
+                fontSize: '14px', fontWeight: '700', cursor: 'pointer',
+                letterSpacing: '0.5px', textTransform: 'uppercase',
+                boxShadow: voiceActive ? '0 0 12px rgba(124,58,237,0.5)' : 'none',
+                transition: 'all .2s',
+              }}
+            >
+              {voiceActive ? '🎙️ VOZ ACTIVA — Pulsa para parar' : '🎙️ Control por voz'}
+            </button>
+
+            {/* Última frase transcrita */}
+            {voiceTranscript && (
+              <div style={{
+                marginTop: 6, padding: '6px 10px',
+                background: '#f0f2f7', borderRadius: 6,
+                fontSize: 12, color: C.muted, fontStyle: 'italic',
+              }}>
+                🗣 "{voiceTranscript}"
+              </div>
+            )}
+
+            {/* Feedback de la acción */}
+            {voiceStatus && (
+              <div style={{
+                marginTop: 4, padding: '7px 10px', borderRadius: 6,
+                fontSize: 13, fontWeight: 600,
+                background: voiceStatus.startsWith('✅') ? '#f0fdf4'
+                          : voiceStatus.startsWith('❌') ? '#fef2f2' : '#fefce8',
+                border: `1px solid ${
+                  voiceStatus.startsWith('✅') ? '#86efac'
+                  : voiceStatus.startsWith('❌') ? '#fca5a5' : '#fde68a'}`,
+                color: C.text,
+              }}>
+                {voiceStatus}
+              </div>
+            )}
+          </div>
+        )}
 
         {connected && (
           <div style={{ marginTop: 12 }}>
