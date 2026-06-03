@@ -423,7 +423,7 @@ export default function GestionRobot({ user, onLogout }) {
               codigo_barras: pkgId,
               dest:          parsed.qr_parsed.dest ?? 'desconocido',
               id_robot:      ROBOT_ID,
-              id_trabajador: 1,
+              id_trabajador: user?.id ?? 1,
             }),
           })
             .then(res => res.json())
