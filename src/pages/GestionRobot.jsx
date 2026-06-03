@@ -765,6 +765,8 @@ export default function GestionRobot({ user, onLogout }) {
             <div className="cb-card" style={{ marginTop: 12 }}>
               <div className="cb-card-header"> Gestión de entregas</div>
               <div className="cb-card-body">
+
+                {/* Ruta completa */}
                 <p style={{ fontSize: 12, color: C.muted, marginBottom: 8 }}>Ruta automática</p>
                 <button
                   className="cb-control-btn active"
@@ -774,6 +776,24 @@ export default function GestionRobot({ user, onLogout }) {
                 >
                    Iniciar ruta fija (todos los pedidos)
                 </button>
+
+                {/* Separador */}
+                <div style={{ borderTop: `1.5px solid ${C.border}`, margin: '4px 0 12px' }} />
+
+                {/* Pedidos individuales */}
+                <p style={{ fontSize: 12, color: C.muted, marginBottom: 8 }}>Pedido individual</p>
+                {["Pedido1", "Pedido2", "Pedido3"].map((pedido) => (
+                  <button
+                    key={pedido}
+                    className="cb-control-btn"
+                    style={{ marginBottom: 8 }}
+                    disabled={!connected}
+                    onClick={() => publishCommand('/web/pedido', pedido)}
+                  >
+                    📦 {pedido}
+                  </button>
+                ))}
+
               </div>
             </div>
           )}
