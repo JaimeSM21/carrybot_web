@@ -26,10 +26,15 @@ def paquete_detectado(body: PaqueteDetectado):
         Dict con el resultado de la operación.
     """
     # 1. Buscar el paquete
+    try:
+        pkg_num = int(body.codigo_barras)   # "001" → 1, "002" → 2
+    except ValueError:
+        pkg_num = None
+
     rows = fetch_query(
-        "SELECT id, descripcion FROM paquetes WHERE codigo_barras = %s",
-        (body.codigo_barras,)
-    )
+        "SELECT id, descripcion FROM paquetes WHERE id = %s",
+        (pkg_num,)
+    ) if pkg_num else []
 
     paquete_eliminado = False
 
