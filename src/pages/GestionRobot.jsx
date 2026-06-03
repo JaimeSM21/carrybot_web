@@ -306,6 +306,8 @@ export default function GestionRobot({ user, onLogout }) {
   const announcRef   = useRef(null);
   const mapCanvasRef = useRef(null);
   const positionRef  = useRef({ x: 0, y: 0 });
+  // IDs de paquetes ya procesados en esta sesión — useRef para evitar closure stale
+  const processedPkgIdsRef = useRef(new Set());
   const [robotDB,      setRobotDB]      = useState(null);
   const [tareaActual,  setTareaActual]  = useState(null);
 
@@ -402,25 +404,60 @@ export default function GestionRobot({ user, onLogout }) {
         try {
           const parsed = JSON.parse(msg.data);
           setDetection(parsed);
+
+          // ── Lógica de BD: borrar paquete + crear alerta ──────────────────
+          // Solo actuar si hay caja detectada y datos del paquete
+          if (!parsed.box_detected || !parsed.qr_parsed?.id) return;
+
+          const pkgId = parsed.qr_parsed.id;
+
+          // Evitar procesar el mismo paquete más de una vez por sesión
+          if (processedPkgIdsRef.current.has(pkgId)) return;
+          processedPkgIdsRef.current.add(pkgId);
+
+          // Llamada al backend: borra el paquete de BD y crea alerta 'cargar'
+          fetch('http://localhost:8000/paquetes/detectado', {
+            method: 'POST',
+            headers: authHeaders(),
+            body: JSON.stringify({
+              codigo_barras: pkgId,
+              dest:          parsed.qr_parsed.dest ?? 'desconocido',
+              id_robot:      ROBOT_ID,
+              id_trabajador: 1,
+            }),
+          })
+            .then(res => res.json())
+            .then(data => {
+              if (data.ok) {
+                const msg = data.paquete_eliminado
+                  ? `📦 ${pkgId} detectado y eliminado de inventario. Alerta creada.`
+                  : `📦 ${pkgId} detectado. Alerta creada.`;
+                setAnnouncement(msg);
+                setTimeout(() => setAnnouncement(null), 8000);
+              }
+            })
+            .catch(() => console.warn('[CarryBot] Error al procesar paquete en BD'));
+
+          // ── Crear tarea si hay destino válido ────────────────────────────
           const DESTINOS_COORDS = {
             Estanteria1:  { x: 6.917, y: 2.282 },
             Estanteria2:  { x: 8.808, y: 2.295 },
             PuntoDeCarga: { x: 4.663, y: 1.682 },
           };
 
-          if (parsed.qr_detected && parsed.qr_parsed?.dest && !tareaActual) {
-            const dest = parsed.qr_parsed.dest;
+          if (parsed.qr_parsed?.dest && !tareaActual) {
+            const dest   = parsed.qr_parsed.dest;
             const coords = DESTINOS_COORDS[dest];
             if (coords) {
               fetch('http://localhost:8000/tareas/', {
                 method: 'POST',
                 headers: authHeaders(),
                 body: JSON.stringify({
-                  id_robot:         ROBOT_ID,
-                  destino_nombre:  dest,
-                  destino_x:        coords.x,
-                  destino_y:        coords.y,
-                  qr_data:          parsed.qr_data,
+                  id_robot:       ROBOT_ID,
+                  destino_nombre: dest,
+                  destino_x:      coords.x,
+                  destino_y:      coords.y,
+                  qr_data:        parsed.qr_data,
                 }),
               })
                 .then(res => res.json())
@@ -428,6 +465,7 @@ export default function GestionRobot({ user, onLogout }) {
                 .catch(() => {});
             }
           }
+
         } catch {
           console.warn('[CarryBot] Error parseando /package/detection:', msg.data);
         }
